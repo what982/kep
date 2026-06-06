@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>智慧课评系统 · 豆包AI · 班级管理 · 月度整合（数据库版）</title>
+    <title>智慧课评系统 · 豆包AI · 班级管理 · 月度整合</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(145deg, #F4F7FC 0%, #EFF2F8 100%); font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, sans-serif; padding: 20px 16px 40px; min-height: 100vh; color: #1E2F3E; }
         .container { max-width: 1400px; margin: 0 auto; }
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+            z-index: 2000; visibility: visible; opacity: 1; transition: 0.3s;
+        }
+        .login-overlay.hidden { visibility: hidden; opacity: 0; pointer-events: none; }
+        .login-card {
+            background: white; border-radius: 2rem; padding: 2rem; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;
+        }
+        .login-card h2 { color: #E56A4F; margin-bottom: 1.5rem; }
+        .login-card input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border-radius: 2rem; border: 1px solid #ddd; font-size: 1rem; }
+        .login-card button { background: #E56A4F; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-size: 1rem; cursor: pointer; width: 100%; }
+        .login-card .error { color: red; margin-top: 0.5rem; font-size: 0.8rem; }
+        .main-content { display: none; }
+        .main-content.visible { display: block; }
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 60px; backdrop-filter: blur(4px); }
         .tab-btn { background: transparent; border: none; padding: 8px 20px; border-radius: 40px; font-weight: 600; font-size: 0.85rem; cursor: pointer; color: #2C5A77; transition: 0.2s; }
         .tab-btn.active { background: linear-gradient(95deg, #F08B6A, #E56A4F); color: white; box-shadow: 0 4px 12px rgba(240,139,106,0.3); }
@@ -47,142 +63,193 @@
         .info-note { font-size: 0.7rem; background: #F0F4F9; border-radius: 30px; padding: 5px 10px; margin-top: 8px; }
         .editable-field { cursor: pointer; color: #E56A4F; }
         .editable-field:hover { text-decoration: underline; }
+        .modal-mask {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+            z-index: 1000; visibility: hidden; opacity: 0; transition: 0.15s;
+        }
+        .modal-mask.show { visibility: visible; opacity: 1; }
+        .record-modal {
+            background: white; border-radius: 1.5rem; width: 90%; max-width: 500px;
+            padding: 1.5rem; box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+        }
+        .record-modal h3 { margin-bottom: 1rem; color: #E56A4F; }
+        .record-modal .form-group { margin-bottom: 1rem; }
+        .record-modal .btn { margin-top: 0.5rem; }
         @media (max-width: 640px) { .card-header { flex-direction: column; align-items: flex-start; } .btn { padding: 6px 12px; } .tab-btn { padding: 6px 14px; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="container">
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="config">⚙️ 班级 & 学生管理</button>
-        <button class="tab-btn" data-tab="record">📝 课堂记录生成</button>
-        <button class="tab-btn" data-tab="monthly">📅 月度整合</button>
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <h2>🔐 管理员登录</h2>
+        <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
+        <input type="password" id="loginPassword" placeholder="密码">
+        <div id="loginError" class="error"></div>
+        <button id="loginSubmitBtn">登 录</button>
     </div>
+</div>
 
-    <!-- 选项卡1：配置、班级管理、学生管理、导入导出 -->
-    <div id="tab-config" class="tab-pane active">
-        <div class="card">
-            <div class="card-header">🤖 豆包API 配置</div>
-            <div class="card-body">
-                <div class="grid-2cols">
-                    <div class="form-group"><label>API Key</label><input type="password" id="apiKey" placeholder="火山引擎 API Key"></div>
-                    <div class="form-group"><label>接入点ID</label><input type="text" id="modelId" placeholder="ep-xxxxxxxxxx"></div>
-                    <div class="form-group"><label>端点地址</label><input type="text" id="endpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions"></div>
-                    <div class="flex-btns"><button id="testApiBtn" class="btn">🔍 测试</button><button id="saveApiBtn" class="btn btn-primary">💾 保存</button></div>
-                </div>
-                <div id="apiTestStatus" class="info-note"></div>
-            </div>
+<div id="mainContent" class="main-content">
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="config">⚙️ 班级 & 学生管理</button>
+            <button class="tab-btn" data-tab="record">📝 课堂记录生成</button>
+            <button class="tab-btn" data-tab="monthly">📅 月度整合</button>
         </div>
-        <div class="card">
-            <div class="card-header">🏷️ 班级管理 <button id="addClassBtn" class="btn btn-sm btn-primary">➕ 新班级</button></div>
-            <div class="card-body"><div class="flex-btns" id="classListContainer" style="flex-wrap:wrap; gap:8px;"></div><div class="info-note">点击班级可编辑，删除班级会清除该班级下所有学生及课堂记录</div></div>
-        </div>
-        <div class="card">
-            <div class="card-header">👥 学生管理</div>
-            <div class="card-body">
-                <div class="grid-2cols" style="margin-bottom:1rem;">
-                    <div class="form-group"><label>学号</label><input type="text" id="stuId" placeholder="学号"></div>
-                    <div class="form-group"><label>姓名</label><input type="text" id="stuName" placeholder="姓名"></div>
-                    <div class="form-group"><label>班级</label><select id="stuClassSelect"></select></div>
-                    <div class="flex-btns"><button id="addStudentBtn" class="btn btn-primary">➕ 添加/更新</button><button id="clearStudentForm" class="btn">清空</button></div>
-                </div>
-                <div class="filter-bar">
-                    <div class="form-group" style="flex:1"><label>班级筛选</label><select id="filterClassSelect"></select></div>
-                    <div class="form-group" style="flex:1"><label>姓名搜索</label><input type="text" id="searchNameInput" placeholder="学生姓名"></div>
-                    <button id="refreshStudentListBtn" class="btn btn-sm">刷新</button>
-                </div>
-                <div class="table-wrapper"><table class="data-table"><thead><tr><th>学号</th><th>姓名</th><th>班级</th><th>操作</th></tr></thead><tbody id="studentTbody"></tbody></table></div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">💾 数据备份与迁移</div>
-            <div class="card-body"><div class="flex-btns"><button id="exportDataBtn" class="btn btn-primary">📤 导出备份(JSON)</button><button id="importDataBtn" class="btn">📥 导入备份(JSON)</button><button id="clearAllDataBtn" class="btn btn-danger">⚠️ 清空所有数据</button></div><div class="info-note">💡 导出备份后可实现数据迁移，导入将覆盖云端数据库所有内容。</div></div>
-        </div>
-    </div>
 
-    <!-- 选项卡2：课堂记录生成 -->
-    <div id="tab-record" class="tab-pane">
-        <div class="card">
-            <div class="card-header">✨ 生成课评（可编辑后再保存）</div>
-            <div class="card-body">
-                <div class="slider-container"><div class="word-row"><label>🎯 目标字数/生</label><span id="wordCountValue" style="background:#E9EDF2; padding:0.2rem 1rem; border-radius:30px;">130</span></div><input type="range" id="wordSlider" min="60" max="300" value="130" step="5"></div>
-                <div class="filter-bar"><select id="classFilterSelectGen" style="width:150px;"><option value="">全部班级</option></select><input type="text" id="nameFilterSelectGen" placeholder="姓名搜索" style="width:150px;"><button id="refreshStudentListGenBtn" class="btn btn-sm">刷新可选学生</button></div>
-                <div id="studentChecklist" class="student-check-group"></div>
-                <div class="grid-2cols" style="margin-top:12px;"><div class="form-group"><label>📖 课堂内容</label><textarea id="classContentInput" rows="2" placeholder="课堂内容"></textarea></div><div class="form-group"><label>💬 通用表现（参考）</label><textarea id="generalPerf" rows="2" placeholder="通用表现"></textarea></div></div>
-                <div class="perf-panel" style="margin-top:12px;"><div class="perf-title" id="toggleIndividualBtn" style="font-weight:700; cursor:pointer; color:#F08B6A;">👤 按学生单独填写表现（优先级高） ▼</div><div id="individualPerfArea" style="display:none; background:#FFFDF6; border-radius:1rem; padding:12px; margin-top:8px;"></div></div>
-                <div class="flex-btns" style="margin-top:12px;"><button id="generatePreviewBtn" class="btn btn-primary">✨ 生成课评预览（可编辑）</button></div>
-                <div id="generatedPreviews" style="margin-top:16px;"></div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><span>📋 课堂记录</span><div class="flex-btns"><button id="batchDeleteBtn" class="btn btn-sm btn-danger">🗑️ 批量删除</button><button id="selectAllRecordsBtn" class="btn btn-sm">✅ 全选</button></div></div>
-            <div class="card-body">
-                <div class="filter-bar">
-                    <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="recordClassFilter"><option value="">全部班级</option></select></div>
-                    <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 学生姓名</label><input type="text" id="recordNameSearch" placeholder="输入学生姓名"></div>
-                    <button id="searchRecordsBtn" class="btn btn-sm">🔍 筛选</button><button id="resetRecordsBtn" class="btn btn-sm">重置</button>
+        <!-- 选项卡1 -->
+        <div id="tab-config" class="tab-pane active">
+            <div class="card">
+                <div class="card-header">🤖 豆包API 配置</div>
+                <div class="card-body">
+                    <div class="grid-2cols">
+                        <div class="form-group"><label>API Key</label><input type="password" id="apiKey" placeholder="火山引擎 API Key"></div>
+                        <div class="form-group"><label>接入点ID</label><input type="text" id="modelId" placeholder="ep-xxxxxxxxxx"></div>
+                        <div class="form-group"><label>端点地址</label><input type="text" id="endpoint" value="https://ark.cn-beijing.volces.com/api/v3/chat/completions"></div>
+                        <div class="flex-btns"><button id="testApiBtn" class="btn">🔍 测试</button><button id="saveApiBtn" class="btn btn-primary">💾 保存</button></div>
+                    </div>
+                    <div id="apiTestStatus" class="info-note"></div>
                 </div>
-                <div class="table-wrapper"><table class="data-table"><thead><tr><th><input type="checkbox" id="recordSelectAllCheckbox"></th><th>学生</th><th>班级</th><th>课堂内容</th><th>课评</th><th>时间</th><th>操作</th></tr></thead><tbody id="recordTbody"></tbody></table></div>
+            </div>
+            <div class="card">
+                <div class="card-header">🏷️ 班级管理 <button id="addClassBtn" class="btn btn-sm btn-primary">➕ 新班级</button></div>
+                <div class="card-body"><div class="flex-btns" id="classListContainer" style="flex-wrap:wrap; gap:8px;"></div><div class="info-note">点击班级可编辑，删除班级会清除该班级下所有学生及课堂记录</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header">👥 学生管理 <button id="batchDeleteStudentBtn" class="btn btn-sm btn-danger">🗑️ 批量删除</button></div>
+                <div class="card-body">
+                    <div class="grid-2cols" style="margin-bottom:1rem;">
+                        <div class="form-group"><label>姓名</label><input type="text" id="stuName" placeholder="姓名"></div>
+                        <div class="form-group"><label>班级</label><select id="stuClassSelect"></select></div>
+                        <div class="flex-btns"><button id="addStudentBtn" class="btn btn-primary">➕ 添加学生</button><button id="clearStudentForm" class="btn">清空</button></div>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="form-group" style="flex:1"><label>班级筛选</label><select id="filterClassSelect"></select></div>
+                        <div class="form-group" style="flex:1"><label>姓名搜索</label><input type="text" id="searchNameInput" placeholder="学生姓名"></div>
+                        <button id="refreshStudentListBtn" class="btn btn-sm">刷新</button>
+                    </div>
+                    <div class="table-wrapper"><table class="data-table"><thead><tr><th><input type="checkbox" id="selectAllStudentsCheckbox"></th><th>学号</th><th>姓名</th><th>班级</th><th>操作</th></tr></thead><tbody id="studentTbody"></tbody></table></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">💾 数据备份与迁移</div>
+                <div class="card-body"><div class="flex-btns"><button id="exportDataBtn" class="btn btn-primary">📤 导出备份(JSON)</button><button id="importDataBtn" class="btn">📥 导入备份(JSON)</button><button id="clearAllDataBtn" class="btn btn-danger">⚠️ 清空所有数据</button></div><div class="info-note">💡 导出备份后可实现数据迁移，导入将覆盖云端数据库所有内容。</div></div>
             </div>
         </div>
-    </div>
 
-    <!-- 选项卡3：月度整合 -->
-    <div id="tab-monthly" class="tab-pane">
-        <div class="card">
-            <div class="card-header">📅 月度课评整合（可编辑/复制）</div>
-            <div class="card-body">
-                <div class="filter-bar" style="margin-bottom: 16px;">
-                    <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
-                    <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
-                    <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
+        <!-- 选项卡2 -->
+        <div id="tab-record" class="tab-pane">
+            <div class="card">
+                <div class="card-header">✨ 生成课评（可编辑后再保存）</div>
+                <div class="card-body">
+                    <div class="slider-container"><div class="word-row"><label>🎯 目标字数/生</label><span id="wordCountValue" style="background:#E9EDF2; padding:0.2rem 1rem; border-radius:30px;">130</span></div><input type="range" id="wordSlider" min="60" max="300" value="130" step="5"></div>
+                    <div class="filter-bar"><select id="classFilterSelectGen" style="width:150px;"><option value="">全部班级</option></select><input type="text" id="nameFilterSelectGen" placeholder="姓名搜索" style="width:150px;"><button id="refreshStudentListGenBtn" class="btn btn-sm">刷新可选学生</button></div>
+                    <div id="studentChecklist" class="student-check-group"></div>
+                    <div class="grid-2cols" style="margin-top:12px;"><div class="form-group"><label>📖 课堂内容</label><textarea id="classContentInput" rows="2" placeholder="课堂内容"></textarea></div><div class="form-group"><label>💬 通用表现（参考）</label><textarea id="generalPerf" rows="2" placeholder="通用表现"></textarea></div></div>
+                    <div class="perf-panel" style="margin-top:12px;"><div class="perf-title" id="toggleIndividualBtn" style="font-weight:700; cursor:pointer; color:#F08B6A;">👤 按学生单独填写表现（优先级高） ▼</div><div id="individualPerfArea" style="display:none; background:#FFFDF6; border-radius:1rem; padding:12px; margin-top:8px;"></div></div>
+                    <div class="flex-btns" style="margin-top:12px;"><button id="generatePreviewBtn" class="btn btn-primary">✨ 生成课评预览（可编辑）</button></div>
+                    <div id="generatedPreviews" style="margin-top:16px;"></div>
                 </div>
-                <div class="form-group"><label>👩‍🎓 选择学生</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
-                <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
-                <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
-                <div class="flex-btns"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
-                <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
-                <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
-                <div class="info-note">💡 基于该生本月所有已保存的课评记录，调用豆包整合成连贯的月度总结。</div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span>📋 课堂记录</span><div class="flex-btns"><button id="batchDeleteBtn" class="btn btn-sm btn-danger">🗑️ 批量删除</button><button id="selectAllRecordsBtn" class="btn btn-sm">✅ 全选</button><button id="addRecordBtn" class="btn btn-sm btn-primary">➕ 新增记录</button></div></div>
+                <div class="card-body">
+                    <div class="filter-bar">
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="recordClassFilter"><option value="">全部班级</option></select></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 学生姓名</label><input type="text" id="recordNameSearch" placeholder="输入学生姓名"></div>
+                        <button id="searchRecordsBtn" class="btn btn-sm">🔍 筛选</button><button id="resetRecordsBtn" class="btn btn-sm">重置</button>
+                    </div>
+                    <div class="table-wrapper"><table class="data-table"><thead><tr><th><input type="checkbox" id="recordSelectAllCheckbox"></th><th>学生</th><th>班级</th><th>课堂内容</th><th>课评</th><th>时间</th><th>操作</th></tr></thead><tbody id="recordTbody"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选项卡3 -->
+        <div id="tab-monthly" class="tab-pane">
+            <div class="card">
+                <div class="card-header">📅 月度课评整合（可编辑/复制）</div>
+                <div class="card-body">
+                    <div class="filter-bar" style="margin-bottom: 16px;">
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
+                        <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
+                    </div>
+                    <div class="form-group"><label>👩‍🎓 选择学生</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
+                    <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
+                    <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
+                    <div class="flex-btns"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
+                    <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
+                    <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
+                    <div class="info-note">💡 基于该生本月所有已保存的课评记录，调用豆包整合成连贯的月度总结。</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 <div id="toastMsg" class="toast-msg"></div>
+
+<!-- 新增记录模态框 -->
+<div id="addRecordModal" class="modal-mask">
+    <div class="record-modal">
+        <h3>📝 新增课堂记录</h3>
+        <div class="form-group"><label>选择学生</label><select id="modalStudentSelect"></select></div>
+        <div class="form-group"><label>课堂内容</label><textarea id="modalClassContent" rows="2" placeholder="课堂内容"></textarea></div>
+        <div class="form-group"><label>课评</label><textarea id="modalReviewText" rows="4" placeholder="课评内容"></textarea></div>
+        <div class="form-group"><label>记录时间</label><input type="datetime-local" id="modalRecordDate"></div>
+        <div class="flex-btns" style="justify-content: flex-end; gap: 10px;">
+            <button id="closeModalBtn" class="btn">取消</button>
+            <button id="confirmAddRecordBtn" class="btn btn-primary">保存</button>
+        </div>
+    </div>
+</div>
 
 <script>
     (function() {
-        // 避免全局变量冲突
-        let supabase;
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-            supabase = window.supabase;
-        } else {
-            console.error('Supabase 库未加载');
-            return;
-        }
-        const SUPABASE_URL = "https://jquoooxqmwlqnqkpfxrm.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_bkQDJ3_R0zStq2yia6zotw_tPh_ePvV";
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // 适配您现有的表名和字段名（注意 recorddate 全小写）
-        const TABLES = {
-            classes: 'review_classes',
-            students: 'review_students',
-            records: 'review_records'
-        };
-        // 记录表中的日期字段名（数据库实际是 recorddate）
-        const RECORD_DATE_COL = 'recorddate';
+        // ========== 登录验证 ==========
+        const ADMIN_USERNAME = "what";
+        const ADMIN_PASSWORD = "what123";
+        const loginOverlay = document.getElementById('loginOverlay');
+        const mainContent = document.getElementById('mainContent');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const loginError = document.getElementById('loginError');
 
-        // 全局数据
-        let classes = [];
-        let students = [];
-        let records = [];
+        function checkLoginStatus() {
+            const logged = localStorage.getItem('eggy_admin_logged') === 'true';
+            if (logged) {
+                loginOverlay.classList.add('hidden');
+                mainContent.classList.add('visible');
+                initMainSystem();
+            } else {
+                loginOverlay.classList.remove('hidden');
+                mainContent.classList.remove('visible');
+            }
+        }
+        function doLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                localStorage.setItem('eggy_admin_logged', 'true');
+                loginOverlay.classList.add('hidden');
+                mainContent.classList.add('visible');
+                initMainSystem();
+            } else {
+                loginError.innerText = '用户名或密码错误';
+            }
+        }
+        loginSubmitBtn.addEventListener('click', doLogin);
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => { if(e.key === 'Enter') doLogin(); });
+        document.getElementById('loginUsername').addEventListener('keypress', (e) => { if(e.key === 'Enter') doLogin(); });
+
+        // ========== 主系统 ==========
+        let supabase, db;
+        let classes = [], students = [], records = [];
         let individualPerfMap = {};
         let currentTab = "config";
-        let currentRecordClassFilter = "";
-        let currentRecordNameFilter = "";
+        let currentRecordClassFilter = "", currentRecordNameFilter = "";
 
-        // 辅助函数
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toastMsg');
             if (!toast) return;
@@ -193,22 +260,36 @@
         }
         function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
         function getClassNameById(classId) { return classes.find(c => c.id === classId)?.name || '未知班级'; }
+        function generateStuId() { return 'S' + Date.now() + Math.floor(Math.random() * 10000); }
 
-        // ================= 从数据库加载数据（字段名已修正）=================
+        function initSupabase() {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabase = window.supabase;
+                const SUPABASE_URL = "https://jquoooxqmwlqnqkpfxrm.supabase.co";
+                const SUPABASE_ANON_KEY = "sb_publishable_bkQDJ3_R0zStq2yia6zotw_tPh_ePvV";
+                db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.error('Supabase 库未加载');
+                showToast('Supabase 库加载失败', true);
+            }
+        }
+
+        const TABLES = { classes: 'review_classes', students: 'review_students', records: 'review_records' };
+        const RECORD_DATE_COL = 'recorddate';
+
         async function loadClasses() {
             const { data, error } = await db.from(TABLES.classes).select('*').order('id');
-            if (error) { console.error('加载班级失败', error); showToast('加载班级失败: ' + error.message, true); return []; }
+            if (error) { console.error(error); showToast('加载班级失败: ' + error.message, true); return []; }
             return data || [];
         }
         async function loadStudents() {
             const { data, error } = await db.from(TABLES.students).select('*').order('id');
-            if (error) { console.error('加载学生失败', error); showToast('加载学生失败: ' + error.message, true); return []; }
+            if (error) { console.error(error); showToast('加载学生失败: ' + error.message, true); return []; }
             return data || [];
         }
         async function loadRecords() {
-            // 使用正确的列名 recorddate 进行排序
             const { data, error } = await db.from(TABLES.records).select('*').order(RECORD_DATE_COL, { ascending: false });
-            if (error) { console.error('加载课评失败', error); showToast('加载课评失败: ' + error.message, true); return []; }
+            if (error) { console.error(error); showToast('加载课评失败: ' + error.message, true); return []; }
             return data || [];
         }
         async function refreshAllData() {
@@ -219,18 +300,15 @@
                 console.log(`数据加载完成: ${classes.length}个班级, ${students.length}个学生, ${records.length}条记录`);
                 renderAllByTab();
             } catch (err) {
-                console.error('刷新数据失败', err);
-                showToast('数据加载失败，请检查网络或数据库配置', true);
+                console.error(err);
+                showToast('数据加载失败', true);
             }
         }
 
-        // ================= 数据库写操作（所有日期字段都用 recorddate）=================
+        // 数据库写操作
         async function addOrUpdateClass(id, name) {
-            if (id) {
-                await db.from(TABLES.classes).update({ name }).eq('id', id);
-            } else {
-                await db.from(TABLES.classes).insert({ id: Date.now(), name });
-            }
+            if (id) await db.from(TABLES.classes).update({ name }).eq('id', id);
+            else await db.from(TABLES.classes).insert({ id: Date.now(), name });
             await refreshAllData();
         }
         async function deleteClassById(classId) {
@@ -248,7 +326,8 @@
                 await db.from(TABLES.students).update({ stuId: student.stuId, name: student.name, classId: student.classId }).eq('id', student.id);
                 await db.from(TABLES.records).update({ studentName: student.name, classId: student.classId }).eq('studentId', student.id);
             } else {
-                await db.from(TABLES.students).insert({ id: Date.now(), stuId: student.stuId, name: student.name, classId: student.classId });
+                const newId = Date.now();
+                await db.from(TABLES.students).insert({ id: newId, stuId: student.stuId, name: student.name, classId: student.classId });
             }
             await refreshAllData();
         }
@@ -257,24 +336,32 @@
             await db.from(TABLES.students).delete().eq('id', id);
             await refreshAllData();
         }
-        async function saveRecordToDB(record) {
-            // 确保传入的对象使用 recorddate 字段
-            const recordForDb = {
-                id: record.id,
-                studentId: record.studentId,
-                studentName: record.studentName,
-                classId: record.classId,
-                classContent: record.classContent,
-                reviewText: record.reviewText,
-                [RECORD_DATE_COL]: record.recordDate  // 注意映射：原代码用 recordDate，数据库列是 recorddate
-            };
-            const existing = records.find(r => r.id === record.id);
-            if (existing) {
-                await db.from(TABLES.records).update(recordForDb).eq('id', record.id);
-            } else {
-                await db.from(TABLES.records).insert(recordForDb);
+        async function deleteStudentsBatch(ids) {
+            for (let id of ids) {
+                await db.from(TABLES.records).delete().eq('studentId', id);
+                await db.from(TABLES.students).delete().eq('id', id);
             }
             await refreshAllData();
+            showToast(`已删除 ${ids.length} 名学生`);
+        }
+        async function saveRecordToDB(record) {
+            const studentIdNum = Number(record.studentId);
+            const classIdNum = Number(record.classId);
+            if (isNaN(studentIdNum) || studentIdNum < 1) { showToast('学生ID无效', true); return; }
+            if (isNaN(classIdNum) || classIdNum < 1) { showToast('班级ID无效', true); return; }
+            const recordForDb = {
+                id: Math.floor(Number(record.id)),
+                studentId: studentIdNum,
+                studentName: String(record.studentName),
+                classId: classIdNum,
+                classContent: String(record.classContent),
+                reviewText: String(record.reviewText),
+                recorddate: String(record.recordDate)
+            };
+            const { error } = await db.from(TABLES.records).insert(recordForDb);
+            if (error) { console.error(error); showToast('保存失败: ' + error.message, true); return; }
+            await refreshAllData();
+            showToast('保存成功');
         }
         async function deleteRecordById(recordId) {
             await db.from(TABLES.records).delete().eq('id', recordId);
@@ -284,8 +371,12 @@
             for (let id of ids) await db.from(TABLES.records).delete().eq('id', id);
             await refreshAllData();
         }
+        async function addManualRecord(studentId, studentName, classId, classContent, reviewText, recordDate) {
+            const newId = Date.now() + Math.floor(Math.random() * 10000);
+            await saveRecordToDB({ id: newId, studentId, studentName, classId, classContent, reviewText, recordDate });
+        }
 
-        // ================= UI 渲染（根据当前选项卡）=================
+        // 渲染各选项卡
         function renderAllByTab() {
             if (currentTab === 'config') {
                 renderClassList();
@@ -294,8 +385,14 @@
             } else if (currentTab === 'record') {
                 refreshStudentSelectors();
                 refreshRecordList();
+                const modalSel = document.getElementById('modalStudentSelect');
+                if (modalSel && students.length) {
+                    modalSel.innerHTML = '<option value="">请选择学生</option>' + students.map(s => `<option value="${s.id}" data-name="${escapeHtml(s.name)}" data-class="${s.classId}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
+                }
             } else if (currentTab === 'monthly') {
                 refreshMonthlyStudentSelect();
+                const monthPicker = document.getElementById('monthPicker');
+                if (monthPicker && !monthPicker.value) monthPicker.value = new Date().toISOString().slice(0,7);
             }
         }
 
@@ -332,21 +429,29 @@
             const tbody = document.getElementById('studentTbody');
             if (!tbody) return;
             tbody.innerHTML = '';
-            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="info-note">暂无学生</td></tr>'; return; }
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="info-note">暂无学生</td></tr>'; return; }
             filtered.forEach(s => {
                 const className = getClassNameById(s.classId);
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${escapeHtml(s.stuId)}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(className)}</td>
-                <td><button class="btn btn-sm editStudentBtn" data-id="${s.id}">编辑</button> <button class="btn btn-sm btn-danger delStudentBtn" data-id="${s.id}">删除</button></td>`;
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="student-checkbox" value="${s.id}"></td>
+                    <td>${escapeHtml(s.stuId)}</td>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td>${escapeHtml(className)}</td>
+                    <td><button class="btn btn-sm editStudentBtn" data-id="${s.id}">编辑</button> <button class="btn btn-sm btn-danger delStudentBtn" data-id="${s.id}">删除</button></td>
+                `;
                 tbody.appendChild(tr);
             });
             document.querySelectorAll('.editStudentBtn').forEach(btn => btn.addEventListener('click', (e) => { const id = parseInt(btn.dataset.id); editStudentById(id); }));
             document.querySelectorAll('.delStudentBtn').forEach(btn => btn.addEventListener('click', async (e) => { const id = parseInt(btn.dataset.id); if (confirm('删除学生也将删除其所有课堂记录')) await deleteStudentById(id); }));
+            const selectAllCheckbox = document.getElementById('selectAllStudentsCheckbox');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.onclick = (e) => { document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = e.target.checked); };
+            }
         }
         function editStudentById(id) {
             const stu = students.find(s => s.id === id);
             if (stu) {
-                document.getElementById('stuId').value = stu.stuId;
                 document.getElementById('stuName').value = stu.name;
                 document.getElementById('stuClassSelect').value = stu.classId;
                 const addBtn = document.getElementById('addStudentBtn');
@@ -355,24 +460,33 @@
             }
         }
         async function handleAddOrUpdateStudent() {
-            const stuId = document.getElementById('stuId').value.trim();
             const name = document.getElementById('stuName').value.trim();
             const classId = parseInt(document.getElementById('stuClassSelect').value);
-            if (!stuId || !name || !classId) { showToast('请填写完整信息', true); return; }
+            if (!name || !classId) { showToast('请填写姓名和班级', true); return; }
             const addBtn = document.getElementById('addStudentBtn');
             if (addBtn.dataset.editId) {
                 const id = parseInt(addBtn.dataset.editId);
-                await addOrUpdateStudent({ id, stuId, name, classId });
+                const oldStu = students.find(s => s.id === id);
+                await addOrUpdateStudent({ id, stuId: oldStu.stuId, name, classId });
                 delete addBtn.dataset.editId;
-                addBtn.innerText = '➕ 添加/更新';
+                addBtn.innerText = '➕ 添加学生';
             } else {
-                await addOrUpdateStudent({ stuId, name, classId });
+                const newStuId = generateStuId();
+                await addOrUpdateStudent({ stuId: newStuId, name, classId });
             }
-            document.getElementById('stuId').value = ''; document.getElementById('stuName').value = '';
+            document.getElementById('stuName').value = '';
             showToast('保存成功');
         }
+        async function batchDeleteStudents() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.student-checkbox:checked'));
+            if (checkedBoxes.length === 0) { showToast('请选择要删除的学生', true); return; }
+            if (confirm(`确定删除 ${checkedBoxes.length} 名学生及其所有课堂记录吗？`)) {
+                const ids = checkedBoxes.map(cb => parseInt(cb.value));
+                await deleteStudentsBatch(ids);
+            }
+        }
 
-        // 课评生成相关 UI
+        // 课评生成相关
         function refreshStudentSelectors() {
             const classFilter = document.getElementById('classFilterSelectGen').value;
             const nameFilter = document.getElementById('nameFilterSelectGen').value.trim().toLowerCase();
@@ -445,7 +559,7 @@
                     if (finalReview.includes('生成失败')) { showToast('课评无效', true); return; }
                     const now = new Date();
                     const recordTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-                    await saveRecordToDB({ id: Date.now() + Math.random(), studentId: res.studentId, studentName: res.studentName, classId: res.classId, classContent: res.classContent, reviewText: finalReview, recordDate: recordTime });
+                    await saveRecordToDB({ id: Date.now() + Math.floor(Math.random() * 10000), studentId: res.studentId, studentName: res.studentName, classId: res.classId, classContent: res.classContent, reviewText: finalReview, recordDate: recordTime });
                     showToast(`已保存 ${res.studentName}`);
                     const card = saveBtn.closest('.gen-card'); if(card) card.remove();
                 };
@@ -453,7 +567,7 @@
             genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
         }
 
-        // 课堂记录列表及筛选（使用 recorddate 字段）
+        // 课堂记录列表
         async function refreshRecordList() {
             const classFilterVal = document.getElementById('recordClassFilter').value;
             const nameFilterVal = document.getElementById('recordNameSearch').value.trim().toLowerCase();
@@ -461,10 +575,9 @@
             const tbody = document.getElementById('recordTbody');
             if (!tbody) return;
             tbody.innerHTML = '';
-            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="7">暂无记录</td></tr>'; return; }
+            if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="info-note">暂无记录</td></tr>'; return; }
             filtered.forEach(rec => {
-                // 数据库返回的日期字段是 recorddate，将其赋值给 recordDate 以便在 UI 中使用
-                const recordDateValue = rec[RECORD_DATE_COL] || '';
+                const recordDateValue = rec.recorddate || '';
                 const tr = document.createElement('tr');
                 tr.dataset.id = rec.id;
                 tr.innerHTML = `
@@ -474,7 +587,8 @@
                     <td class="editable-field editable-class" data-id="${rec.id}">${escapeHtml(rec.classContent)}</td>
                     <td class="editable-field editable-review" data-id="${rec.id}">${escapeHtml(rec.reviewText.substring(0, 60))}${rec.reviewText.length>60?'…':''}</td>
                     <td><input type="datetime-local" class="rec-date-edit" data-id="${rec.id}" value="${recordDateValue.replace(' ', 'T')}" style="width:130px;"></td>
-                    <td><button class="btn btn-sm saveRecordBtn" data-id="${rec.id}">💾 保存</button> <button class="btn btn-sm btn-danger delRecordBtn" data-id="${rec.id}">删除</button></td>`;
+                    <td><button class="btn btn-sm saveRecordBtn" data-id="${rec.id}">💾 保存</button> <button class="btn btn-sm btn-danger delRecordBtn" data-id="${rec.id}">删除</button></td>
+                `;
                 tbody.appendChild(tr);
             });
             bindRecordEvents();
@@ -482,7 +596,7 @@
         function bindRecordEvents() {
             document.querySelectorAll('.saveRecordBtn').forEach(btn => btn.addEventListener('click', async (e) => { const rid = parseInt(btn.dataset.id); await saveRecordEdit(rid); }));
             document.querySelectorAll('.delRecordBtn').forEach(btn => btn.addEventListener('click', async (e) => { const rid = parseInt(btn.dataset.id); if (confirm('删除该记录？')) await deleteRecordById(rid); }));
-            document.querySelectorAll('.rec-date-edit').forEach(inp => inp.addEventListener('change', async (e) => { const rid = parseInt(inp.dataset.id); const rec = records.find(r => r.id === rid); if (rec) { rec[RECORD_DATE_COL] = inp.value.replace('T', ' '); await saveRecordToDB(rec); showToast('时间已更新'); } }));
+            document.querySelectorAll('.rec-date-edit').forEach(inp => inp.addEventListener('change', async (e) => { const rid = parseInt(inp.dataset.id); const rec = records.find(r => r.id === rid); if (rec) { rec.recorddate = inp.value.replace('T', ' '); await saveRecordToDB(rec); showToast('时间已更新'); } }));
             document.querySelectorAll('.editable-class, .editable-review').forEach(div => div.addEventListener('click', async (e) => { const rid = parseInt(div.dataset.id); const rec = records.find(r => r.id === rid); if (rec) { const field = div.classList.contains('editable-class') ? 'classContent' : 'reviewText'; const newVal = prompt(`修改${field === 'classContent' ? '课堂内容' : '课评'}`, rec[field]); if (newVal && newVal.trim()) { rec[field] = newVal.trim(); await saveRecordToDB(rec); showToast('已更新'); } } }));
         }
         async function saveRecordEdit(rid) {
@@ -494,7 +608,7 @@
             if (classDiv && reviewDiv && dateInp) {
                 rec.classContent = classDiv.innerText.trim();
                 rec.reviewText = reviewDiv.innerText.trim();
-                rec[RECORD_DATE_COL] = dateInp.value.replace('T', ' ');
+                rec.recorddate = dateInp.value.replace('T', ' ');
                 await saveRecordToDB(rec);
                 showToast('记录已更新');
             }
@@ -502,23 +616,28 @@
         async function batchDeleteRecords() { const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value)); if (!checked.length) { showToast('请选择记录', true); return; } if (confirm(`删除 ${checked.length} 条记录`)) { await deleteRecordsBatch(checked); showToast('已删除'); } }
         function selectAllRecords() { document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = document.getElementById('recordSelectAllCheckbox').checked); }
 
-        // 月度整合（使用 recorddate 字段匹配月份）
+        // 月度整合
         async function refreshMonthlyStudentSelect() {
             const classFilter = document.getElementById('monthlyClassFilter').value;
             const nameSearch = document.getElementById('monthlyNameSearch').value.trim().toLowerCase();
             let filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
             const sel = document.getElementById('studentSelect');
-            sel.innerHTML = '<option value="">请选择学生</option>' + filtered.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
+            if (!sel) return;
+            if (filtered.length === 0) {
+                sel.innerHTML = '<option value="">-- 暂无学生，请先添加 --</option>';
+            } else {
+                sel.innerHTML = '<option value="">请选择学生</option>' + filtered.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
+            }
+            if (filtered.length === 1) sel.value = filtered[0].id;
         }
         async function viewMonthRecords() {
             const studentId = parseInt(document.getElementById('studentSelect').value);
             const monthVal = document.getElementById('monthPicker').value;
             if (!studentId || !monthVal) { showToast('请选择学生和月份', true); return; }
-            // 注意：数据库日期格式为 YYYY-MM-DD HH:MM:SS，用 startsWith 匹配月份
-            const monthRecords = records.filter(r => r.studentId === studentId && r[RECORD_DATE_COL] && r[RECORD_DATE_COL].startsWith(monthVal));
+            const monthRecords = records.filter(r => r.studentId === studentId && r.recorddate && r.recorddate.startsWith(monthVal));
             const contents = [...new Set(monthRecords.map(r => r.classContent))];
             document.getElementById('classContentSummary').innerHTML = contents.map(c => `• ${escapeHtml(c)}`).join('<br>') || '无记录';
-            const preview = monthRecords.map(r => `【${r[RECORD_DATE_COL].slice(5,10)}】${r.reviewText}`).join('\n\n');
+            const preview = monthRecords.map(r => `【${r.recorddate.slice(5,10)}】${r.reviewText}`).join('\n\n');
             document.getElementById('monthlySummaryEditable').value = preview || '暂无课评记录';
         }
         async function generateMonthlySummary() {
@@ -526,7 +645,7 @@
             const monthVal = document.getElementById('monthPicker').value;
             const targetWords = parseInt(document.getElementById('monthWordSlider').value);
             if (!studentId || !monthVal) { showToast('请选择学生和月份', true); return; }
-            const monthRecords = records.filter(r => r.studentId === studentId && r[RECORD_DATE_COL] && r[RECORD_DATE_COL].startsWith(monthVal));
+            const monthRecords = records.filter(r => r.studentId === studentId && r.recorddate && r.recorddate.startsWith(monthVal));
             if (monthRecords.length === 0) { showToast('本月无记录', true); return; }
             const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
             if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
@@ -548,8 +667,9 @@
         async function importData(file) { const reader=new FileReader(); reader.onload=async (e)=>{ try{ const data=JSON.parse(e.target.result); if(data.classes) for(let c of data.classes) await db.from(TABLES.classes).upsert(c); if(data.students) for(let s of data.students) await db.from(TABLES.students).upsert(s); if(data.records) for(let r of data.records) await db.from(TABLES.records).upsert(r); await refreshAllData(); showToast('导入成功'); }catch(err){ showToast('文件错误',true); } }; reader.readAsText(file); }
         async function clearAllData() { if(confirm('清空所有数据（班级、学生、记录）不可恢复')){ await db.from(TABLES.records).delete().neq('id',0); await db.from(TABLES.students).delete().neq('id',0); await db.from(TABLES.classes).delete().neq('id',0); await refreshAllData(); showToast('已清空'); } }
 
-        // ================= 事件绑定与初始化 =================
-        async function init() {
+        // 事件绑定与初始化
+        async function initMainSystem() {
+            initSupabase();
             await refreshAllData();
 
             // 选项卡切换
@@ -565,19 +685,20 @@
                 });
             });
 
-            // 学生管理模块
+            // 学生管理
             document.getElementById('addStudentBtn').addEventListener('click', handleAddOrUpdateStudent);
-            document.getElementById('clearStudentForm').addEventListener('click', () => { document.getElementById('stuId').value=''; document.getElementById('stuName').value=''; const btn=document.getElementById('addStudentBtn'); delete btn.dataset.editId; btn.innerText='➕ 添加/更新'; });
+            document.getElementById('clearStudentForm').addEventListener('click', () => { document.getElementById('stuName').value=''; const addBtn=document.getElementById('addStudentBtn'); delete addBtn.dataset.editId; addBtn.innerText='➕ 添加学生'; });
             document.getElementById('refreshStudentListBtn').addEventListener('click', () => refreshStudentTable());
+            document.getElementById('batchDeleteStudentBtn').addEventListener('click', batchDeleteStudents);
 
-            // 课评生成模块
+            // 课评生成
             document.getElementById('refreshStudentListGenBtn').addEventListener('click', refreshStudentSelectors);
             document.getElementById('generatePreviewBtn').addEventListener('click', generatePreviews);
             document.getElementById('classFilterSelectGen').addEventListener('change', refreshStudentSelectors);
             document.getElementById('nameFilterSelectGen').addEventListener('input', refreshStudentSelectors);
             document.getElementById('toggleIndividualBtn').addEventListener('click', () => { const area=document.getElementById('individualPerfArea'); area.style.display = area.style.display==='none' ? 'block' : 'none'; });
 
-            // 课堂记录列表模块
+            // 课堂记录列表
             document.getElementById('searchRecordsBtn').addEventListener('click', () => refreshRecordList());
             document.getElementById('resetRecordsBtn').addEventListener('click', () => { document.getElementById('recordClassFilter').value=''; document.getElementById('recordNameSearch').value=''; refreshRecordList(); });
             document.getElementById('batchDeleteBtn').addEventListener('click', batchDeleteRecords);
@@ -586,7 +707,38 @@
             document.getElementById('recordClassFilter').addEventListener('change', () => refreshRecordList());
             document.getElementById('recordNameSearch').addEventListener('input', () => refreshRecordList());
 
-            // 月度整合模块
+            // 手动新增记录模态框
+            const addRecordBtn = document.getElementById('addRecordBtn');
+            const modal = document.getElementById('addRecordModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const confirmAddBtn = document.getElementById('confirmAddRecordBtn');
+            addRecordBtn.addEventListener('click', () => {
+                const modalSel = document.getElementById('modalStudentSelect');
+                if (modalSel && students.length) {
+                    modalSel.innerHTML = '<option value="">请选择学生</option>' + students.map(s => `<option value="${s.id}" data-name="${escapeHtml(s.name)}" data-class="${s.classId}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
+                }
+                document.getElementById('modalClassContent').value = '';
+                document.getElementById('modalReviewText').value = '';
+                document.getElementById('modalRecordDate').value = new Date().toISOString().slice(0,16);
+                modal.classList.add('show');
+            });
+            closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
+            confirmAddBtn.addEventListener('click', async () => {
+                const studentId = document.getElementById('modalStudentSelect').value;
+                if (!studentId) { showToast('请选择学生', true); return; }
+                const student = students.find(s => s.id == studentId);
+                const classContent = document.getElementById('modalClassContent').value.trim();
+                const reviewText = document.getElementById('modalReviewText').value.trim();
+                let recordDate = document.getElementById('modalRecordDate').value;
+                if (!classContent) { showToast('请填写课堂内容', true); return; }
+                if (!reviewText) { showToast('请填写课评', true); return; }
+                if (!recordDate) recordDate = new Date().toISOString().slice(0,16).replace('T', ' ') + ':00';
+                else recordDate = recordDate.replace('T', ' ') + ':00';
+                await addManualRecord(student.id, student.name, student.classId, classContent, reviewText, recordDate);
+                modal.classList.remove('show');
+            });
+
+            // 月度整合
             document.getElementById('viewRecordsBtn').addEventListener('click', viewMonthRecords);
             document.getElementById('generateSummaryBtn').addEventListener('click', generateMonthlySummary);
             document.getElementById('copyContentSummaryBtn').addEventListener('click', () => { const text=document.getElementById('classContentSummary').innerText; if(text && text!=='-') navigator.clipboard.writeText(text); showToast('已复制'); });
@@ -603,14 +755,14 @@
             document.getElementById('saveApiBtn').addEventListener('click', () => { const cfg={apiKey:document.getElementById('apiKey').value.trim(),modelId:document.getElementById('modelId').value.trim(),endpoint:document.getElementById('endpoint').value.trim()}; if(cfg.apiKey && cfg.modelId) localStorage.setItem('doubao_api_config_local',JSON.stringify(cfg)); showToast('API配置已保存'); });
             document.getElementById('testApiBtn').addEventListener('click', async () => { const cfg={apiKey:document.getElementById('apiKey').value.trim(),modelId:document.getElementById('modelId').value.trim(),endpoint:document.getElementById('endpoint').value.trim()}; if(!cfg.apiKey||!cfg.modelId){ showToast('请填写完整',true); return; } try{ const res=await fetch(cfg.endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${cfg.apiKey}`},body:JSON.stringify({model:cfg.modelId,messages:[{role:'user',content:'ok'}],max_tokens:5})}); if(res.ok) showToast('✅ 连接成功'); else showToast('❌ 鉴权失败',true); }catch(e){ showToast('网络错误',true); } });
 
-            // 滑块显示
+            // 滑块和日期
             document.getElementById('wordSlider').addEventListener('input', (e) => document.getElementById('wordCountValue').innerText = e.target.value);
             document.getElementById('monthWordSlider').addEventListener('input', (e) => document.getElementById('targetWordDisplay').innerText = e.target.value);
-            document.getElementById('monthPicker').value = new Date().toISOString().slice(0,7);
+            const monthPicker = document.getElementById('monthPicker');
+            if (monthPicker && !monthPicker.value) monthPicker.value = new Date().toISOString().slice(0,7);
             document.getElementById('filterClassSelect').addEventListener('change', () => refreshStudentTable());
             document.getElementById('searchNameInput').addEventListener('input', () => refreshStudentTable());
 
-            // 读取保存的API配置
             const savedApi = localStorage.getItem('doubao_api_config_local');
             if(savedApi) { const cfg=JSON.parse(savedApi); document.getElementById('apiKey').value=cfg.apiKey||''; document.getElementById('modelId').value=cfg.modelId||''; document.getElementById('endpoint').value=cfg.endpoint||''; }
 
@@ -619,11 +771,7 @@
             console.log('初始化完成，所有事件已绑定');
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
+        checkLoginStatus();
     })();
 </script>
 </body>

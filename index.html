@@ -305,7 +305,7 @@
             }
         }
 
-        // 数据库写操作
+        // 数据库写操作（保持不变）
         async function addOrUpdateClass(id, name) {
             if (id) await db.from(TABLES.classes).update({ name }).eq('id', id);
             else await db.from(TABLES.classes).insert({ id: Date.now(), name });
@@ -376,7 +376,7 @@
             await saveRecordToDB({ id: newId, studentId, studentName, classId, classContent, reviewText, recordDate });
         }
 
-        // 渲染各选项卡
+        // 渲染各选项卡（保持不变）
         function renderAllByTab() {
             if (currentTab === 'config') {
                 renderClassList();
@@ -396,7 +396,6 @@
             }
         }
 
-        // 班级管理界面
         function renderClassList() {
             const container = document.getElementById('classListContainer');
             if (!container) return;
@@ -486,7 +485,6 @@
             }
         }
 
-        // 课评生成相关
         function refreshStudentSelectors() {
             const classFilter = document.getElementById('classFilterSelectGen').value;
             const nameFilter = document.getElementById('nameFilterSelectGen').value.trim().toLowerCase();
@@ -509,6 +507,8 @@
             area.innerHTML = html;
             document.querySelectorAll('.ind-perf-input').forEach(inp => inp.addEventListener('change', (e) => { const sid = parseInt(inp.dataset.id); individualPerfMap[sid] = inp.value.trim(); }));
         }
+
+        // ========== 核心修改：采用新课评生成逻辑（无“你”字、多角度、并发） ==========
         async function generatePreviews() {
             const classContent = document.getElementById('classContentInput').value.trim();
             if (!classContent) { showToast('请填写课堂内容', true); return; }
@@ -518,38 +518,84 @@
             const generalPerf = document.getElementById('generalPerf').value.trim();
             const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
             if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
+
             const genBtn = document.getElementById('generatePreviewBtn');
             genBtn.disabled = true; genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
             const container = document.getElementById('generatedPreviews');
-            container.innerHTML = '<div class="info-note">⏳ 正在生成...</div>';
-            const results = [];
+            container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（无“你”字，多角度）...</div>';
+
+            // 收集待生成的学生信息
+            const studentList = [];
             for (const cb of selectedBoxes) {
                 const sid = parseInt(cb.value);
                 const student = students.find(s => s.id === sid);
-                if (!student) continue;
-                const perf = individualPerfMap[sid] || generalPerf || '';
-                try {
-                    const prompt = `请为“${student.name}”同学写一段课后评价，要求：
-1. 开头必须为“${student.name}本节课……”，结合课堂内容“${classContent}”。
-2. 字数严格控制在${targetWords}字左右，口语化亲切自然。
-3. 重点围绕学习态度、参与度等角度。具体表现：“${perf}”。
-4. 绝对不能出现“你”字！
-5. 结尾emoji加一句建议。
-直接输出评价文本。`;
-                    const res = await fetch(apiConfig.endpoint, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                        body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], max_tokens: Math.min(400, targetWords * 2 + 50), temperature: 0.85 })
-                    });
-                    if (!res.ok) throw new Error();
-                    const data = await res.json();
-                    let review = data.choices?.[0]?.message?.content?.trim() || '生成失败';
-                    review = review.replace(/你/g, student.name);
-                    if (!review.startsWith(student.name)) review = student.name + '本节课' + review;
-                    results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review });
-                } catch (err) { results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}` }); }
+                if (student) {
+                    const perf = individualPerfMap[sid] || generalPerf || '';
+                    studentList.push({ id: student.id, name: student.name, classId: student.classId, perf });
+                }
             }
-            container.innerHTML = results.map((res, idx) => `<div class="gen-card" data-idx="${idx}"><div class="gen-card-header"><span>👩‍🎓 ${escapeHtml(res.studentName)}</span><div><button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button><button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button></div></div><textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea></div>`).join('');
-            results.forEach((res, idx) => {
+
+            // 角度池，让评价更多样
+            const angles = [
+                '学习态度与积极性', '课堂参与度与专注力', '思维敏捷与主动提问',
+                '练习完成准确性与书写习惯', '合作互动与倾听习惯', '进步幅度与学习韧性',
+                '自律性及课堂常规表现', '创新思维与解题灵活性'
+            ];
+
+            // 针对单个学生的生成函数
+            async function fetchReviewForStudent(student, idx) {
+                const angle = angles[idx % angles.length];
+                const prompt = `请为“${student.name}”同学写一段课后评价，要求如下：
+1. 开头必须为“${student.name}本节课……”，结合课堂内容“${classContent}”展开。
+2. 字数严格控制在${targetWords}字左右，口语化亲切自然，像老师之间的日常交流。
+3. 重点围绕“${angle}”角度评价。具体表现：“${student.perf || '无特别说明'}”，如无特别说明则根据该角度合理描述。
+4. 非常重要：全文绝对不能出现“你”这个字！要用“${student.name}”或直接叙述（如“上课很专注”“作业完成得很好”），避免任何第二人称。
+5. 结尾用1-2个合适的emoji，并给出一句温暖的鼓励或小建议（同样不能出现“你”）。
+6. 确保评价与其他同学在用词、句式、细节上尽量不同，体现个性化。
+直接输出评价文本，不要加额外解释。`;
+                const res = await fetch(apiConfig.endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
+                    body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], max_tokens: Math.min(400, targetWords * 2 + 50), temperature: 0.85 })
+                });
+                if (!res.ok) throw new Error(`API请求失败 (${res.status})`);
+                const data = await res.json();
+                let review = data.choices?.[0]?.message?.content?.trim() || '生成失败，请重试';
+                // 后处理：移除残留的“你”
+                review = review.replace(/你/g, student.name);
+                if (!review.startsWith(student.name)) {
+                    review = student.name + '本节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
+                }
+                return review;
+            }
+
+            // 并发限制（最多3个同时）
+            const concurrencyLimit = 3;
+            const results = [];
+            const queue = [...studentList];
+            async function worker() {
+                while (queue.length) {
+                    const student = queue.shift();
+                    const idx = studentList.findIndex(s => s.id === student.id);
+                    try {
+                        const review = await fetchReviewForStudent(student, idx);
+                        results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review });
+                    } catch (err) {
+                        console.error(err);
+                        results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}` });
+                    }
+                    // 更新提示（简单展示进度）
+                    container.innerHTML = `<div class="info-note">⏳ 正在生成中... 已完成 ${results.length}/${studentList.length}</div>`;
+                }
+            }
+            const workers = Array(Math.min(concurrencyLimit, studentList.length)).fill().map(() => worker());
+            await Promise.all(workers);
+            // 按原始顺序排序
+            const orderedResults = studentList.map(st => results.find(r => r.studentId === st.id) || { studentId: st.id, studentName: st.name, classId: st.classId, classContent, reviewText: '生成失败' });
+
+            // 渲染结果卡片（与原样式一致）
+            container.innerHTML = orderedResults.map((res, idx) => `<div class="gen-card" data-idx="${idx}"><div class="gen-card-header"><span>👩‍🎓 ${escapeHtml(res.studentName)}</span><div><button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button><button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button></div></div><textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea></div>`).join('');
+            orderedResults.forEach((res, idx) => {
                 const copyBtn = container.querySelector(`.copy-single-btn[data-idx="${idx}"]`);
                 const saveBtn = container.querySelector(`.save-single-btn[data-idx="${idx}"]`);
                 const textarea = container.querySelector(`.gen-card-content[data-idx="${idx}"]`);
@@ -567,7 +613,7 @@
             genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
         }
 
-        // 课堂记录列表
+        // 课堂记录列表（保持不变）
         async function refreshRecordList() {
             const classFilterVal = document.getElementById('recordClassFilter').value;
             const nameFilterVal = document.getElementById('recordNameSearch').value.trim().toLowerCase();
@@ -616,7 +662,7 @@
         async function batchDeleteRecords() { const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value)); if (!checked.length) { showToast('请选择记录', true); return; } if (confirm(`删除 ${checked.length} 条记录`)) { await deleteRecordsBatch(checked); showToast('已删除'); } }
         function selectAllRecords() { document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = document.getElementById('recordSelectAllCheckbox').checked); }
 
-        // 月度整合
+        // 月度整合（保持不变）
         async function refreshMonthlyStudentSelect() {
             const classFilter = document.getElementById('monthlyClassFilter').value;
             const nameSearch = document.getElementById('monthlyNameSearch').value.trim().toLowerCase();
@@ -662,7 +708,7 @@
             } catch(e) { showToast('整合失败', true); } finally { genBtn.disabled = false; genBtn.innerHTML = '✨ 生成月度课评总结'; }
         }
 
-        // 导入导出备份
+        // 导入导出备份（保持不变）
         async function exportData() { const exportObj = { classes, students, records }; const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`课评系统_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast('导出成功'); }
         async function importData(file) { const reader=new FileReader(); reader.onload=async (e)=>{ try{ const data=JSON.parse(e.target.result); if(data.classes) for(let c of data.classes) await db.from(TABLES.classes).upsert(c); if(data.students) for(let s of data.students) await db.from(TABLES.students).upsert(s); if(data.records) for(let r of data.records) await db.from(TABLES.records).upsert(r); await refreshAllData(); showToast('导入成功'); }catch(err){ showToast('文件错误',true); } }; reader.readAsText(file); }
         async function clearAllData() { if(confirm('清空所有数据（班级、学生、记录）不可恢复')){ await db.from(TABLES.records).delete().neq('id',0); await db.from(TABLES.students).delete().neq('id',0); await db.from(TABLES.classes).delete().neq('id',0); await refreshAllData(); showToast('已清空'); } }
@@ -672,7 +718,6 @@
             initSupabase();
             await refreshAllData();
 
-            // 选项卡切换
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const tabId = btn.dataset.tab;
@@ -685,20 +730,15 @@
                 });
             });
 
-            // 学生管理
             document.getElementById('addStudentBtn').addEventListener('click', handleAddOrUpdateStudent);
             document.getElementById('clearStudentForm').addEventListener('click', () => { document.getElementById('stuName').value=''; const addBtn=document.getElementById('addStudentBtn'); delete addBtn.dataset.editId; addBtn.innerText='➕ 添加学生'; });
             document.getElementById('refreshStudentListBtn').addEventListener('click', () => refreshStudentTable());
             document.getElementById('batchDeleteStudentBtn').addEventListener('click', batchDeleteStudents);
-
-            // 课评生成
             document.getElementById('refreshStudentListGenBtn').addEventListener('click', refreshStudentSelectors);
             document.getElementById('generatePreviewBtn').addEventListener('click', generatePreviews);
             document.getElementById('classFilterSelectGen').addEventListener('change', refreshStudentSelectors);
             document.getElementById('nameFilterSelectGen').addEventListener('input', refreshStudentSelectors);
             document.getElementById('toggleIndividualBtn').addEventListener('click', () => { const area=document.getElementById('individualPerfArea'); area.style.display = area.style.display==='none' ? 'block' : 'none'; });
-
-            // 课堂记录列表
             document.getElementById('searchRecordsBtn').addEventListener('click', () => refreshRecordList());
             document.getElementById('resetRecordsBtn').addEventListener('click', () => { document.getElementById('recordClassFilter').value=''; document.getElementById('recordNameSearch').value=''; refreshRecordList(); });
             document.getElementById('batchDeleteBtn').addEventListener('click', batchDeleteRecords);
@@ -707,7 +747,6 @@
             document.getElementById('recordClassFilter').addEventListener('change', () => refreshRecordList());
             document.getElementById('recordNameSearch').addEventListener('input', () => refreshRecordList());
 
-            // 手动新增记录模态框
             const addRecordBtn = document.getElementById('addRecordBtn');
             const modal = document.getElementById('addRecordModal');
             const closeModalBtn = document.getElementById('closeModalBtn');
@@ -738,7 +777,6 @@
                 modal.classList.remove('show');
             });
 
-            // 月度整合
             document.getElementById('viewRecordsBtn').addEventListener('click', viewMonthRecords);
             document.getElementById('generateSummaryBtn').addEventListener('click', generateMonthlySummary);
             document.getElementById('copyContentSummaryBtn').addEventListener('click', () => { const text=document.getElementById('classContentSummary').innerText; if(text && text!=='-') navigator.clipboard.writeText(text); showToast('已复制'); });
@@ -746,8 +784,6 @@
             document.getElementById('monthlyClassFilter').addEventListener('change', refreshMonthlyStudentSelect);
             document.getElementById('monthlyNameSearch').addEventListener('input', refreshMonthlyStudentSelect);
             document.getElementById('refreshMonthlyStudentBtn').addEventListener('click', refreshMonthlyStudentSelect);
-
-            // 班级管理、备份等
             document.getElementById('addClassBtn').addEventListener('click', async () => { const newName = prompt('班级名称'); if(newName) await addOrUpdateClass(null, newName.trim()); });
             document.getElementById('exportDataBtn').addEventListener('click', exportData);
             document.getElementById('importDataBtn').addEventListener('click', () => { const inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); }; inp.click(); });
@@ -755,7 +791,6 @@
             document.getElementById('saveApiBtn').addEventListener('click', () => { const cfg={apiKey:document.getElementById('apiKey').value.trim(),modelId:document.getElementById('modelId').value.trim(),endpoint:document.getElementById('endpoint').value.trim()}; if(cfg.apiKey && cfg.modelId) localStorage.setItem('doubao_api_config_local',JSON.stringify(cfg)); showToast('API配置已保存'); });
             document.getElementById('testApiBtn').addEventListener('click', async () => { const cfg={apiKey:document.getElementById('apiKey').value.trim(),modelId:document.getElementById('modelId').value.trim(),endpoint:document.getElementById('endpoint').value.trim()}; if(!cfg.apiKey||!cfg.modelId){ showToast('请填写完整',true); return; } try{ const res=await fetch(cfg.endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${cfg.apiKey}`},body:JSON.stringify({model:cfg.modelId,messages:[{role:'user',content:'ok'}],max_tokens:5})}); if(res.ok) showToast('✅ 连接成功'); else showToast('❌ 鉴权失败',true); }catch(e){ showToast('网络错误',true); } });
 
-            // 滑块和日期
             document.getElementById('wordSlider').addEventListener('input', (e) => document.getElementById('wordCountValue').innerText = e.target.value);
             document.getElementById('monthWordSlider').addEventListener('input', (e) => document.getElementById('targetWordDisplay').innerText = e.target.value);
             const monthPicker = document.getElementById('monthPicker');
@@ -768,7 +803,7 @@
 
             refreshClassSelects();
             renderAllByTab();
-            console.log('初始化完成，所有事件已绑定');
+            console.log('初始化完成，所有事件已绑定 (课评生成已升级为无“你”、多角度并发模式)');
         }
 
         checkLoginStatus();

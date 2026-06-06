@@ -77,6 +77,44 @@
         .record-modal .form-group { margin-bottom: 1rem; }
         .record-modal .btn { margin-top: 0.5rem; }
         @media (max-width: 640px) { .card-header { flex-direction: column; align-items: flex-start; } .btn { padding: 6px 12px; } .tab-btn { padding: 6px 14px; } }
+        .batch-student-list {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #FFE0D0;
+            border-radius: 1rem;
+            background: #FFFCF9;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .batch-student-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #FFEFE5;
+        }
+
+            .batch-student-item:last-child {
+                border: none;
+            }
+
+        .batch-result-card {
+            background: #FFFFFF;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            border-left: 6px solid #F08B6A;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .progress-indicator {
+            background: #EFF2F8;
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            margin: 8px 0;
+            text-align: center;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -169,23 +207,97 @@
         <!-- 选项卡3 -->
         <div id="tab-monthly" class="tab-pane">
             <div class="card">
-                <div class="card-header">📅 月度课评整合（可编辑/复制）</div>
+                <div class="card-header">📅 月度课评整合（支持批量选择学生，一键生成）</div>
                 <div class="card-body">
+                    <!-- 筛选栏（班级/姓名）影响下方批量列表及单个选择 -->
                     <div class="filter-bar" style="margin-bottom: 16px;">
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
                         <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
                     </div>
-                    <div class="form-group"><label>👩‍🎓 选择学生</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
-                    <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
-                    <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
-                    <div class="flex-btns"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
+
+                    <!-- 原有的单个学生操作区（保留） -->
+                    <div class="grid-2cols" style="gap: 1rem; background:#F9FCFE; border-radius:1rem; padding:0.6rem; margin-bottom:1rem;">
+                        <div class="form-group"><label>👩‍🎓 选择学生（单学生操作）</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
+                        <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
+                        <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
+                        <div class="flex-btns" style="gap:8px;"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
+                    </div>
+
+                    <!-- ========= 新增：批量选择学生区域 ========= -->
+                    <div style="border-top: 2px dashed #FFE0D0; margin: 10px 0 8px; padding-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
+                            <strong>👥 批量选择学生（基于上方筛选）</strong>
+                            <div><button id="batchSelectAllBtn" class="btn btn-sm">✅ 全选当前列表</button> <button id="batchClearAllBtn" class="btn btn-sm">❌ 清空</button></div>
+                        </div>
+                        <div id="batchStudentListContainer" class="batch-student-list" style="max-height: 220px; overflow-y: auto; border: 1px solid #FFE0D0; border-radius: 1rem; background: #FFFCF9; padding: 12px; margin: 12px 0;">
+                            <div class="info-note">暂无学生，请先添加班级与学生</div>
+                        </div>
+                        <div class="flex-btns" style="margin-top: 8px;">
+                            <button id="batchGenerateSummariesBtn" class="btn btn-primary" style="background: #2C5A77;">🚀 批量生成月度总结 + 课堂内容汇总</button>
+                            <button id="clearBatchResultsBtn" class="btn btn-sm">🗑️ 清空批量结果</button>
+                        </div>
+                    </div>
+
+                    <!-- 单个学生查看的内容汇总及月度总结（原有） -->
                     <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
                     <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
-                    <div class="info-note">💡 基于该生本月所有已保存的课评记录，调用豆包整合成连贯的月度总结。</div>
+
+                    <!-- 批量生成结果展示区域 -->
+                    <div style="margin-top: 28px;" id="batchResultArea">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"><strong>📦 批量生成汇总结果</strong><span id="batchProgressMsg" style="font-size:12px; color:#D9583C;"></span></div>
+                        <div id="batchResultsContainer" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="info-note">💡 批量生成时，将基于所选月份及目标字数，为每个学生生成专属月度总结和本月课堂内容汇总（使用豆包AI整合所有课评记录）。</div>
                 </div>
             </div>
-        </div>
+            <div id="tab-monthly" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">📅 月度课评整合（支持批量选择学生，一键生成）</div>
+                    <div class="card-body">
+                        <!-- 筛选栏（班级/姓名）影响下方批量列表及单个选择 -->
+                        <div class="filter-bar" style="margin-bottom: 16px;">
+                            <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
+                            <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
+                            <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
+                        </div>
+
+                        <!-- 原有的单个学生操作区（保留） -->
+                        <div class="grid-2cols" style="gap: 1rem; background:#F9FCFE; border-radius:1rem; padding:0.6rem; margin-bottom:1rem;">
+                            <div class="form-group"><label>👩‍🎓 选择学生（单学生操作）</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
+                            <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
+                            <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
+                            <div class="flex-btns" style="gap:8px;"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
+                        </div>
+
+                        <!-- ========= 新增：批量选择学生区域 ========= -->
+                        <div style="border-top: 2px dashed #FFE0D0; margin: 10px 0 8px; padding-top: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
+                                <strong>👥 批量选择学生（基于上方筛选）</strong>
+                                <div><button id="batchSelectAllBtn" class="btn btn-sm">✅ 全选当前列表</button> <button id="batchClearAllBtn" class="btn btn-sm">❌ 清空</button></div>
+                            </div>
+                            <div id="batchStudentListContainer" class="batch-student-list" style="max-height: 220px; overflow-y: auto; border: 1px solid #FFE0D0; border-radius: 1rem; background: #FFFCF9; padding: 12px; margin: 12px 0;">
+                                <div class="info-note">暂无学生，请先添加班级与学生</div>
+                            </div>
+                            <div class="flex-btns" style="margin-top: 8px;">
+                                <button id="batchGenerateSummariesBtn" class="btn btn-primary" style="background: #2C5A77;">🚀 批量生成月度总结 + 课堂内容汇总</button>
+                                <button id="clearBatchResultsBtn" class="btn btn-sm">🗑️ 清空批量结果</button>
+                            </div>
+                        </div>
+
+                        <!-- 单个学生查看的内容汇总及月度总结（原有） -->
+                        <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
+                        <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
+
+                        <!-- 批量生成结果展示区域 -->
+                        <div style="margin-top: 28px;" id="batchResultArea">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"><strong>📦 批量生成汇总结果</strong><span id="batchProgressMsg" style="font-size:12px; color:#D9583C;"></span></div>
+                            <div id="batchResultsContainer" style="max-height: 500px; overflow-y: auto;"></div>
+                        </div>
+                        <div class="info-note">💡 批量生成时，将基于所选月份及目标字数，为每个学生生成专属月度总结和本月课堂内容汇总（使用豆包AI整合所有课评记录）。</div>
+                    </div>
+                </div>
+            </div>
     </div>
 </div>
 
@@ -824,6 +936,145 @@
 
             refreshClassSelects();
             renderAllByTab();
+            // ========== 月度批量生成功能 ==========
+// 渲染批量学生列表（基于筛选）
+function renderBatchStudentList() {
+    const container = document.getElementById('batchStudentListContainer');
+    if (!container) return;
+    const classFilter = document.getElementById('monthlyClassFilter')?.value || '';
+    const nameSearch = document.getElementById('monthlyNameSearch')?.value.trim().toLowerCase() || '';
+    const filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="info-note">暂无学生，请调整筛选条件或添加学生</div>';
+        return;
+    }
+    container.innerHTML = filtered.map(s => `<div class="batch-student-item"><input type="checkbox" class="batch-student-cb" value="${s.id}" id="batch_${s.id}"> <label for="batch_${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</label></div>`).join('');
+}
+
+function selectAllBatch(selectAll) {
+    document.querySelectorAll('.batch-student-cb').forEach(cb => cb.checked = selectAll);
+}
+
+// 批量生成月度总结+内容汇总
+async function batchGenerateSummaries() {
+    const selectedCbs = Array.from(document.querySelectorAll('.batch-student-cb:checked'));
+    if (selectedCbs.length === 0) { showToast('请至少选择一名学生', true); return; }
+    const monthVal = document.getElementById('monthPicker').value;
+    if (!monthVal) { showToast('请选择月份', true); return; }
+    const targetWords = parseInt(document.getElementById('monthWordSlider').value);
+    const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
+    if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
+
+    const studentIds = selectedCbs.map(cb => parseInt(cb.value));
+    const studentsData = studentIds.map(id => students.find(s => s.id === id)).filter(s => s);
+    if (studentsData.length === 0) return;
+
+    const batchContainer = document.getElementById('batchResultsContainer');
+    const progressSpan = document.getElementById('batchProgressMsg');
+    const batchBtn = document.getElementById('batchGenerateSummariesBtn');
+    batchBtn.disabled = true; batchBtn.innerHTML = '<span class="loading-spinner"></span> 批量生成中...';
+    batchContainer.innerHTML = '<div class="progress-indicator">⏳ 准备生成，请稍候...</div>';
+
+    const concurrency = 3;
+    const results = [];
+    const queue = [...studentsData];
+    let completed = 0;
+    const updateProgress = () => { if(progressSpan) progressSpan.innerText = `进度: ${completed}/${studentsData.length}`; };
+
+    async function generateForStudent(student) {
+        try {
+            const monthRecords = records.filter(r => r.studentId === student.id && r.recorddate && r.recorddate.startsWith(monthVal));
+            if (monthRecords.length === 0) return { student, error: '本月无任何课堂记录', contentSummaryHtml: '无记录', summary: '' };
+            const classContentsList = [...new Set(monthRecords.map(r => r.classContent))];
+            const contentSummaryHtml = classContentsList.map(c => `• ${escapeHtml(c)}`).join('<br>');
+            const rawFeedback = monthRecords.map(r => `- ${r.reviewText}`).join('\n');
+            const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，语言亲切自然，不要出现“你”字，写成连贯段落，总结孩子本月表现和进步。\n原始课评：\n${rawFeedback}`;
+            const res = await fetch(apiConfig.endpoint, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
+                body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: Math.min(500, targetWords+80) })
+            });
+            if (!res.ok) throw new Error(`API ${res.status}`);
+            const data = await res.json();
+            let summary = data.choices?.[0]?.message?.content?.trim() || '生成失败，请重试';
+            summary = summary.replace(/你/g, student.name);
+            return { student, contentSummary: classContentsList, contentSummaryHtml, summary, error: null };
+        } catch (err) {
+            return { student, error: err.message, contentSummaryHtml: '获取失败', summary: '' };
+        }
+    }
+
+    async function worker() {
+        while (queue.length) {
+            const student = queue.shift();
+            const result = await generateForStudent(student);
+            results.push(result);
+            completed++;
+            updateProgress();
+            const card = document.createElement('div');
+            card.className = 'batch-result-card';
+            card.style.padding = '12px';
+            card.style.marginBottom = '12px';
+            card.style.border = '1px solid #FFE6DC';
+            card.style.borderRadius = '1rem';
+            const stuName = escapeHtml(result.student.name);
+            if (result.error) {
+                card.innerHTML = `<div style="font-weight:bold;">❌ ${stuName}</div><div class="info-note" style="color:red;">生成失败: ${result.error}</div>`;
+            } else {
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;"><strong>📌 ${stuName}</strong>
+                    <div><button class="btn btn-sm copyBatchContentBtn" data-student="${result.student.id}" data-type="content">📋 复制课堂内容</button> <button class="btn btn-sm copyBatchSummaryBtn" data-student="${result.student.id}" data-type="summary">📋 复制月度总结</button></div></div>
+                    <div><strong>📚 课堂内容汇总：</strong><div class="result-preview" style="background:#FFF8F0; margin-top:4px;">${result.contentSummaryHtml || '无'}</div></div>
+                    <div style="margin-top:10px;"><strong>🤖 月度总结：</strong><textarea rows="4" class="batch-summary-textarea" data-student="${result.student.id}" style="width:100%; margin-top:4px; border-radius:1rem; border:1px solid #FFD4C2; padding:8px;">${escapeHtml(result.summary)}</textarea></div>
+                `;
+            }
+            batchContainer.appendChild(card);
+            card.querySelectorAll('.copyBatchContentBtn').forEach(btn => btn.addEventListener('click', () => { const txt = card.querySelector('.result-preview')?.innerText; if(txt) navigator.clipboard.writeText(txt); showToast('已复制课堂内容汇总'); }));
+            card.querySelectorAll('.copyBatchSummaryBtn').forEach(btn => btn.addEventListener('click', () => { const txtarea = card.querySelector('.batch-summary-textarea'); if(txtarea) navigator.clipboard.writeText(txtarea.value); showToast('已复制月度总结'); }));
+        }
+    }
+    const workers = Array(Math.min(concurrency, studentsData.length)).fill().map(() => worker());
+    await Promise.all(workers);
+    batchBtn.disabled = false; batchBtn.innerHTML = '🚀 批量生成月度总结 + 课堂内容汇总';
+    if(progressSpan) progressSpan.innerText = `批量完成，共生成 ${results.length} 份总结`;
+    if (results.some(r => r.error)) showToast('部分学生生成失败，请检查API配置或记录', true);
+    else showToast('批量生成完成');
+}
+
+// 重写原有的 refreshMonthlyStudentSelect 以同时刷新批量列表
+const originalRefreshMonthly = window.refreshMonthlyStudentSelect;
+window.refreshMonthlyStudentSelect = function() {
+    const classFilter = document.getElementById('monthlyClassFilter').value;
+    const nameSearch = document.getElementById('monthlyNameSearch').value.trim().toLowerCase();
+    let filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
+    const sel = document.getElementById('studentSelect');
+    if (sel) {
+        if (filtered.length === 0) sel.innerHTML = '<option value="">-- 暂无学生，请先添加 --</option>';
+        else sel.innerHTML = '<option value="">请选择学生</option>' + filtered.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
+        if (filtered.length === 1) sel.value = filtered[0].id;
+    }
+    // 新增：渲染批量列表
+    renderBatchStudentList();
+};
+
+// 绑定批量相关事件
+function bindMonthlyBatchEvents() {
+    const batchGenerateBtn = document.getElementById('batchGenerateSummariesBtn');
+    if (batchGenerateBtn) batchGenerateBtn.addEventListener('click', batchGenerateSummaries);
+    const selectAllBtn = document.getElementById('batchSelectAllBtn');
+    if (selectAllBtn) selectAllBtn.addEventListener('click', () => selectAllBatch(true));
+    const clearAllBtn = document.getElementById('batchClearAllBtn');
+    if (clearAllBtn) clearAllBtn.addEventListener('click', () => selectAllBatch(false));
+    const clearResultsBtn = document.getElementById('clearBatchResultsBtn');
+    if (clearResultsBtn) clearResultsBtn.addEventListener('click', () => { document.getElementById('batchResultsContainer').innerHTML = ''; document.getElementById('batchProgressMsg').innerText = ''; });
+    document.getElementById('refreshMonthlyStudentBtn')?.addEventListener('click', () => { window.refreshMonthlyStudentSelect(); });
+    document.getElementById('monthlyClassFilter')?.addEventListener('change', window.refreshMonthlyStudentSelect);
+    document.getElementById('monthlyNameSearch')?.addEventListener('input', window.refreshMonthlyStudentSelect);
+}
+
+// 调用绑定（放在 initMainSystem 末尾）
+bindMonthlyBatchEvents();
+// 初始化批量列表
+renderBatchStudentList();
             console.log('初始化完成，所有事件已绑定 (课评生成已升级为无“你”、多角度并发模式)');
         }
 

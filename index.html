@@ -86,7 +86,6 @@
             padding: 12px;
             margin: 12px 0;
         }
-
         .batch-student-item {
             display: flex;
             align-items: center;
@@ -94,11 +93,7 @@
             padding: 5px 0;
             border-bottom: 1px solid #FFEFE5;
         }
-
-            .batch-student-item:last-child {
-                border: none;
-            }
-
+        .batch-student-item:last-child { border: none; }
         .batch-result-card {
             background: #FFFFFF;
             border-radius: 1rem;
@@ -106,7 +101,6 @@
             border-left: 6px solid #F08B6A;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
-
         .progress-indicator {
             background: #EFF2F8;
             border-radius: 30px;
@@ -209,14 +203,14 @@
             <div class="card">
                 <div class="card-header">📅 月度课评整合（支持批量选择学生，一键生成）</div>
                 <div class="card-body">
-                    <!-- 筛选栏（班级/姓名）影响下方批量列表及单个选择 -->
+                    <!-- 筛选栏 -->
                     <div class="filter-bar" style="margin-bottom: 16px;">
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
                         <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
                     </div>
 
-                    <!-- 原有的单个学生操作区（保留） -->
+                    <!-- 原有的单个学生操作区 -->
                     <div class="grid-2cols" style="gap: 1rem; background:#F9FCFE; border-radius:1rem; padding:0.6rem; margin-bottom:1rem;">
                         <div class="form-group"><label>👩‍🎓 选择学生（单学生操作）</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
                         <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
@@ -224,7 +218,7 @@
                         <div class="flex-btns" style="gap:8px;"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
                     </div>
 
-                    <!-- ========= 新增：批量选择学生区域 ========= -->
+                    <!-- 批量选择学生区域 -->
                     <div style="border-top: 2px dashed #FFE0D0; margin: 10px 0 8px; padding-top: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
                             <strong>👥 批量选择学生（基于上方筛选）</strong>
@@ -239,7 +233,7 @@
                         </div>
                     </div>
 
-                    <!-- 单个学生查看的内容汇总及月度总结（原有） -->
+                    <!-- 单个学生查看的内容汇总及月度总结 -->
                     <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
                     <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
 
@@ -251,53 +245,7 @@
                     <div class="info-note">💡 批量生成时，将基于所选月份及目标字数，为每个学生生成专属月度总结和本月课堂内容汇总（使用豆包AI整合所有课评记录）。</div>
                 </div>
             </div>
-            <div id="tab-monthly" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">📅 月度课评整合（支持批量选择学生，一键生成）</div>
-                    <div class="card-body">
-                        <!-- 筛选栏（班级/姓名）影响下方批量列表及单个选择 -->
-                        <div class="filter-bar" style="margin-bottom: 16px;">
-                            <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
-                            <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
-                            <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
-                        </div>
-
-                        <!-- 原有的单个学生操作区（保留） -->
-                        <div class="grid-2cols" style="gap: 1rem; background:#F9FCFE; border-radius:1rem; padding:0.6rem; margin-bottom:1rem;">
-                            <div class="form-group"><label>👩‍🎓 选择学生（单学生操作）</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
-                            <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
-                            <div class="slider-container"><div style="display:flex; justify-content:space-between;"><span>🎯 月度总结目标字数</span><span id="targetWordDisplay">180</span></div><input type="range" id="monthWordSlider" min="80" max="400" value="180" step="10"></div>
-                            <div class="flex-btns" style="gap:8px;"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
-                        </div>
-
-                        <!-- ========= 新增：批量选择学生区域 ========= -->
-                        <div style="border-top: 2px dashed #FFE0D0; margin: 10px 0 8px; padding-top: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
-                                <strong>👥 批量选择学生（基于上方筛选）</strong>
-                                <div><button id="batchSelectAllBtn" class="btn btn-sm">✅ 全选当前列表</button> <button id="batchClearAllBtn" class="btn btn-sm">❌ 清空</button></div>
-                            </div>
-                            <div id="batchStudentListContainer" class="batch-student-list" style="max-height: 220px; overflow-y: auto; border: 1px solid #FFE0D0; border-radius: 1rem; background: #FFFCF9; padding: 12px; margin: 12px 0;">
-                                <div class="info-note">暂无学生，请先添加班级与学生</div>
-                            </div>
-                            <div class="flex-btns" style="margin-top: 8px;">
-                                <button id="batchGenerateSummariesBtn" class="btn btn-primary" style="background: #2C5A77;">🚀 批量生成月度总结 + 课堂内容汇总</button>
-                                <button id="clearBatchResultsBtn" class="btn btn-sm">🗑️ 清空批量结果</button>
-                            </div>
-                        </div>
-
-                        <!-- 单个学生查看的内容汇总及月度总结（原有） -->
-                        <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
-                        <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
-
-                        <!-- 批量生成结果展示区域 -->
-                        <div style="margin-top: 28px;" id="batchResultArea">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"><strong>📦 批量生成汇总结果</strong><span id="batchProgressMsg" style="font-size:12px; color:#D9583C;"></span></div>
-                            <div id="batchResultsContainer" style="max-height: 500px; overflow-y: auto;"></div>
-                        </div>
-                        <div class="info-note">💡 批量生成时，将基于所选月份及目标字数，为每个学生生成专属月度总结和本月课堂内容汇总（使用豆包AI整合所有课评记录）。</div>
-                    </div>
-                </div>
-            </div>
+        </div>
     </div>
 </div>
 
@@ -360,7 +308,6 @@
         let classes = [], students = [], records = [];
         let individualPerfMap = {};
         let currentTab = "config";
-        let currentRecordClassFilter = "", currentRecordNameFilter = "";
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toastMsg');
@@ -417,7 +364,6 @@
             }
         }
 
-        // 数据库写操作（保持不变）
         async function addOrUpdateClass(id, name) {
             if (id) await db.from(TABLES.classes).update({ name }).eq('id', id);
             else await db.from(TABLES.classes).insert({ id: Date.now(), name });
@@ -488,7 +434,7 @@
             await saveRecordToDB({ id: newId, studentId, studentName, classId, classContent, reviewText, recordDate });
         }
 
-        // 渲染各选项卡（保持不变）
+        // ========== 渲染函数 ==========
         function renderAllByTab() {
             if (currentTab === 'config') {
                 renderClassList();
@@ -620,368 +566,86 @@
             document.querySelectorAll('.ind-perf-input').forEach(inp => inp.addEventListener('change', (e) => { const sid = parseInt(inp.dataset.id); individualPerfMap[sid] = inp.value.trim(); }));
         }
 
-        // ========== 核心修改：采用新课评生成逻辑（无“你”字、多角度、并发） ==========
-        // ========== 优化后的 generatePreviews（口语化 + 精确字数 + 多样性 + 禁止虚构 + 同学生不同课不雷同） ==========
-// ========== 优化后的 generatePreviews（强化利用用户填写的表现信息） ==========
-async function generatePreviews() {
-    const classContent = document.getElementById('classContentInput').value.trim();
-    if (!classContent) { showToast('请填写课堂内容', true); return; }
-    const selectedBoxes = Array.from(document.querySelectorAll('.stuCheckItem:checked'));
-    if (selectedBoxes.length === 0) { showToast('请至少选择一位学生', true); return; }
-    const targetWords = parseInt(document.getElementById('wordSlider').value);
-    const generalPerf = document.getElementById('generalPerf').value.trim();
-    const apiConfig = {
-        apiKey: document.getElementById('apiKey').value.trim(),
-        modelId: document.getElementById('modelId').value.trim(),
-        endpoint: document.getElementById('endpoint').value.trim()
-    };
-    if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
+        // ========== 课评多样性辅助函数（口语化版本） ==========
+        const DIMENSIONS_POOL = [
+            '上课眼睛跟不跟老师走，有没有走神', 
+            '做题速度是磨蹭还是爽快，准确率高不高',
+            '敢不敢主动举手回答问题，声音大不大',
+            '跟同桌合作时配合得怎么样，会不会抢话',
+            '遇到困难时是愣住还是想办法，抗挫力如何',
+            '课堂笔记或练习本写得整不整洁，有没有涂改',
+            '老师讲新知识时眼神有没有光，理解得快不快',
+            '搭积木/编程时手顺不顺，遇到bug有没有耐心找',
+            '有没有自己跳出常规思路，冒出些不一样的想法',
+            '课堂上小动作多不多，坐不坐得住',
+            '有没有主动帮助旁边同学，或者主动请教别人',
+            '对老师提问的反应是快还是慢，答得靠不靠谱',
+            '作业上交是不是及时，书写有没有进步',
+            '课堂最后几分钟还能不能集中注意力',
+            '对课堂任务的理解对不对，会不会跑偏主题',
+            '小组讨论时是主导者还是倾听者，有没有贡献点子'
+        ];
 
-    const genBtn = document.getElementById('generatePreviewBtn');
-    genBtn.disabled = true;
-    genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
-    const container = document.getElementById('generatedPreviews');
-    container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（口语化+精确字数）...</div>';
+        const STYLE_POOL = [
+            '像班主任在走廊里跟家长随口聊孩子，语气轻松自然，不端着',
+            '像老师课后在办公室跟同事吐槽或夸奖，真实有细节',
+            '像写给家长的小纸条，温暖实在，不说大道理',
+            '像课堂观察笔记，平实记录，有啥说啥，不拔高',
+            '像朋友间聊天，带点口语词（“其实”“反正”“不过”），亲切',
+            '像老师翻看学生作品时的随口感叹，生动有画面'
+        ];
 
-    const studentList = [];
-    for (const cb of selectedBoxes) {
-        const sid = parseInt(cb.value);
-        const student = students.find(s => s.id === sid);
-        if (student) {
-            const perf = individualPerfMap[sid] || generalPerf || '';
-            studentList.push({ id: student.id, name: student.name, classId: student.classId, perf });
+        const OPENING_POOL = [
+            '这节课吧，', 
+            '今天这堂课，', 
+            '这次课上呢，',
+            '这节课看下来，', 
+            '今天上完课，感觉'
+        ];
+
+        const ENDING_POOL = [
+            '用个简单的表情（比如😊或👍），再说一句实在的鼓励，别喊口号',
+            '给一个很具体的小建议（比如“下次可以……”），加个表情',
+            '用一句生活化的话收尾，比如“继续加油，看好他”之类，配个表情',
+            '说一个期待，比如“希望下节课还能看到这样的状态”，加个表情'
+        ];
+
+        function randomPick(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
         }
-    }
-    if (studentList.length === 0) { showToast('未找到有效学生', true); genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）'; return; }
 
-    const studentConfigs = studentList.map((student) => {
-        const dims = selectDimensions();
-        return {
-            student,
-            dims,
-            style: randomPick(STYLE_POOL),
-            opening: randomPick(OPENING_POOL),
-            ending: randomPick(ENDING_POOL),
-            seed: Math.random().toString(36).substring(2, 8)
-        };
-    });
-
-    async function fetchReviewWithRetry(config, maxRetries = 2) {
-        const { student, dims, style, opening, ending } = config;
-        const dimStr = dims.join('、');
-        const perfInfo = student.perf || '无特别说明';
-
-        // ========== 核心修改：强化利用 perfInfo 的指令 ==========
-        const prompt = `请为“${student.name}”同学写一段课后评语，要求如下：
-
-1. 开头必须为“${student.name}${opening}”，接着围绕课堂内容“${classContent}”展开。
-2. 【字数要求】必须严格控制在 ${targetWords} 字左右，正负不超过 3 字（即 ${targetWords-3}~${targetWords+3} 字）。你生成后自己数一下中文字数。
-3. 风格：${style}。
-4. 重点从以下方面聊：${dimStr}。
-5. 【非常重要】本次评价必须基于该生表现信息：“${perfInfo}”来写。如果该生表现有具体描述（例如“做题慢但准确率高”“今天主动举手了”），请务必在评价中明确引用或体现这些内容，作为评价的核心依据；如果该生表现是“无特别说明”或空，则根据课堂内容和维度进行合理推断，但不要捏造具体行为细节。
-6. 【关键】由于你只知道课堂内容“${classContent}”和该生表现“${perfInfo}”，并不知道其他具体细节，所以**不要虚构任何该生没有参与的具体环节、题号或话语**。请基于已有信息，从整体印象和课堂参与状态进行评价，描述该生的学习状态、专注程度、互动情况、完成任务的节奏等，所有评价必须紧扣本节课内容，不能跑题。
-7. 【新增】请特别注意：即使你曾经为这位同学写过其他课堂的评语，本次评价也必须**完全针对本节课“${classContent}”的特定内容**来写，避免使用“学习认真”“态度端正”等任何通用表述，要让读者一眼看出这是针对这节课的专属评价，与其他课堂的评价有明显差异。
-
-9. 全文不能出现“你”“她”“他”字，直接用名字或“该生”，或者直接说事（比如“上课很专注”）。
-10. 结尾：${ending}。
-11. 确保这段评语跟其他同学的评语在选词、句式和侧重点上都不一样，避免雷同。
-12. 适当加表情符号（比如😊、👍、😂之类），自然就好。
-
-直接输出评语文本，不要加任何额外解释。`;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                const res = await fetch(apiConfig.endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                    body: JSON.stringify({
-                        model: apiConfig.modelId,
-                        messages: [{ role: 'user', content: prompt }],
-                        max_tokens: Math.min(600, targetWords * 2 + 80),
-                        temperature: 0.85 + (Math.random() * 0.15),
-                        top_p: 0.92
-                    })
-                });
-                if (!res.ok) throw new Error(`API请求失败 (${res.status})`);
-                const data = await res.json();
-                let review = data.choices?.[0]?.message?.content?.trim() || '生成失败';
-                review = review.replace(/[你她他]/g, student.name);
-                if (!review.startsWith(student.name)) {
-                    review = student.name + '这节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
-                }
-                const charCount = countChineseChars(review);
-                const diff = Math.abs(charCount - targetWords);
-                if (diff <= 5 || attempt === maxRetries) {
-                    return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review, charCount };
-                } else {
-                    console.log(`字数偏差 ${charCount} vs ${targetWords}，重试 ${attempt+1}`);
-                }
-            } catch (err) {
-                console.error(err);
-                if (attempt === maxRetries) {
-                    return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}`, charCount: 0 };
-                }
-            }
+        function selectDimensions() {
+            const shuffled = [...DIMENSIONS_POOL].sort(() => Math.random() - 0.5);
+            const count = Math.random() > 0.6 ? 3 : 2;
+            return shuffled.slice(0, count);
         }
-        return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: '生成失败，请重试', charCount: 0 };
-    }
 
-    const concurrencyLimit = 3;
-    const results = [];
-    const queue = [...studentConfigs];
-    let completed = 0;
-    const updateProgress = () => {
-        container.innerHTML = `<div class="info-note">⏳ 生成中... ${completed}/${studentList.length}</div>`;
-    };
-
-    async function worker() {
-        while (queue.length) {
-            const config = queue.shift();
-            const result = await fetchReviewWithRetry(config);
-            results.push(result);
-            completed++;
-            updateProgress();
+        function countChineseChars(text) {
+            const chinese = text.match(/[\u4e00-\u9fa5]/g);
+            return chinese ? chinese.length : 0;
         }
-    }
 
-    const workers = Array(Math.min(concurrencyLimit, studentConfigs.length)).fill().map(() => worker());
-    await Promise.all(workers);
-
-    const orderedResults = studentList.map(st => {
-        const found = results.find(r => r.studentId === st.id);
-        return found || { studentId: st.id, studentName: st.name, classId: st.classId, classContent, reviewText: '生成失败', charCount: 0 };
-    });
-
-    container.innerHTML = orderedResults.map((res, idx) => {
-        const wordInfo = res.charCount ? `（实际字数：${res.charCount}）` : '';
-        return `<div class="gen-card" data-idx="${idx}">
-            <div class="gen-card-header">
-                <span>👩‍🎓 ${escapeHtml(res.studentName)} ${wordInfo}</span>
-                <div>
-                    <button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button>
-                    <button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button>
-                </div>
-            </div>
-            <textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea>
-        </div>`;
-    }).join('');
-
-    orderedResults.forEach((res, idx) => {
-        const card = container.querySelector(`.gen-card[data-idx="${idx}"]`);
-        if (!card) return;
-        const copyBtn = card.querySelector(`.copy-single-btn`);
-        const saveBtn = card.querySelector(`.save-single-btn`);
-        const textarea = card.querySelector(`.gen-card-content`);
-        if (copyBtn) copyBtn.onclick = () => { navigator.clipboard.writeText(textarea.value); showToast(`已复制 ${res.studentName}`); };
-        if (saveBtn) saveBtn.onclick = async () => {
-            const finalReview = textarea.value.trim();
-            if (finalReview.includes('生成失败')) { showToast('课评无效', true); return; }
-            const now = new Date();
-            const recordTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-            await saveRecordToDB({
-                id: Date.now() + Math.floor(Math.random() * 10000),
-                studentId: res.studentId,
-                studentName: res.studentName,
-                classId: res.classId,
-                classContent: res.classContent,
-                reviewText: finalReview,
-                recordDate: recordTime
-            });
-            showToast(`已保存 ${res.studentName}`);
-            card.remove();
-        };
-    });
-
-    genBtn.disabled = false;
-    genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
-    showToast(`✅ 生成完成，共 ${orderedResults.length} 份课评`);
-}
-    const classContent = document.getElementById('classContentInput').value.trim();
-    if (!classContent) { showToast('请填写课堂内容', true); return; }
-    const selectedBoxes = Array.from(document.querySelectorAll('.stuCheckItem:checked'));
-    if (selectedBoxes.length === 0) { showToast('请至少选择一位学生', true); return; }
-    const targetWords = parseInt(document.getElementById('wordSlider').value);
-    const generalPerf = document.getElementById('generalPerf').value.trim();
-    const apiConfig = {
-        apiKey: document.getElementById('apiKey').value.trim(),
-        modelId: document.getElementById('modelId').value.trim(),
-        endpoint: document.getElementById('endpoint').value.trim()
-    };
-    if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
-
-    const genBtn = document.getElementById('generatePreviewBtn');
-    genBtn.disabled = true;
-    genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
-    const container = document.getElementById('generatedPreviews');
-    container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（口语化+精确字数）...</div>';
-
-    const studentList = [];
-    for (const cb of selectedBoxes) {
-        const sid = parseInt(cb.value);
-        const student = students.find(s => s.id === sid);
-        if (student) {
-            const perf = individualPerfMap[sid] || generalPerf || '';
-            studentList.push({ id: student.id, name: student.name, classId: student.classId, perf });
-        }
-    }
-    if (studentList.length === 0) { showToast('未找到有效学生', true); genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）'; return; }
-
-    const studentConfigs = studentList.map((student) => {
-        const dims = selectDimensions();
-        return {
-            student,
-            dims,
-            style: randomPick(STYLE_POOL),
-            opening: randomPick(OPENING_POOL),
-            ending: randomPick(ENDING_POOL),
-            seed: Math.random().toString(36).substring(2, 8)
-        };
-    });
-
-    async function fetchReviewWithRetry(config, maxRetries = 2) {
-        const { student, dims, style, opening, ending } = config;
-        const dimStr = dims.join('、');
-        const perfInfo = student.perf || '无特别说明';
-
-        // ========== 核心修改：增加“同学生不同课不雷同”指令 ==========
-        const prompt = `请为“${student.name}”同学写一段课后评语，要求如下：
-
-1. 开头必须为“${student.name}${opening}”，接着围绕课堂内容“${classContent}”展开。
-2. 【字数要求】必须严格控制在 ${targetWords} 字左右，正负不超过 3 字（即 ${targetWords-3}~${targetWords+3} 字）。你生成后自己数一下中文字数。
-3. 风格：${style}。
-4. 重点从以下方面聊：${dimStr}。该生本次表现：“${perfInfo}”，如果没有特别说明，你就根据这些方面进行合理推断。
-5. 【关键】由于你只知道课堂内容“${classContent}”，并不知道该生具体做了哪些事、说了哪些话、哪道题做得怎么样，所以请你**不要虚构任何具体行为细节**（例如“做第3题时卡了一下”“举手回答了一个问题”等）。请基于课堂内容，从整体印象和课堂参与状态进行评价，描述该生的学习状态、专注程度、互动情况、完成任务的节奏等，所有评价必须紧扣本节课内容，不能跑题。
-6. 【新增】请特别注意：即使你曾经为这位同学写过其他课堂的评语，本次评价也必须**完全针对本节课“${classContent}”的特定内容和活动**来写，避免使用“学习认真”“态度端正”等任何通用表述，要让读者一眼看出这是针对这节课的专属评价，与其他课堂的评价有明显差异。
-7. 禁止使用“表现良好”“积极发言”“认真听讲”这种空话套话，用口语化的真实感受，像老师随口说的话。
-8. 全文不能出现“你”“她”“他”字，直接用名字或“该生”，或者直接说事（比如“上课很专注”）。
-9. 结尾：${ending}。
-10. 确保这段评语跟其他同学的评语在选词、句式和侧重点上都不一样，避免雷同。
-11. 适当加表情符号（比如😊、👍、😂之类），自然就好。
-
-直接输出评语文本，不要加任何额外解释。`;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                const res = await fetch(apiConfig.endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                    body: JSON.stringify({
-                        model: apiConfig.modelId,
-                        messages: [{ role: 'user', content: prompt }],
-                        max_tokens: Math.min(600, targetWords * 2 + 80),
-                        temperature: 0.85 + (Math.random() * 0.15),
-                        top_p: 0.92
-                    })
-                });
-                if (!res.ok) throw new Error(`API请求失败 (${res.status})`);
-                const data = await res.json();
-                let review = data.choices?.[0]?.message?.content?.trim() || '生成失败';
-                review = review.replace(/[你她他]/g, student.name);
-                if (!review.startsWith(student.name)) {
-                    review = student.name + '这节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
-                }
-                const charCount = countChineseChars(review);
-                const diff = Math.abs(charCount - targetWords);
-                if (diff <= 5 || attempt === maxRetries) {
-                    return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review, charCount };
-                } else {
-                    console.log(`字数偏差 ${charCount} vs ${targetWords}，重试 ${attempt+1}`);
-                }
-            } catch (err) {
-                console.error(err);
-                if (attempt === maxRetries) {
-                    return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}`, charCount: 0 };
-                }
-            }
-        }
-        return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: '生成失败，请重试', charCount: 0 };
-    }
-
-    const concurrencyLimit = 3;
-    const results = [];
-    const queue = [...studentConfigs];
-    let completed = 0;
-    const updateProgress = () => {
-        container.innerHTML = `<div class="info-note">⏳ 生成中... ${completed}/${studentList.length}</div>`;
-    };
-
-    async function worker() {
-        while (queue.length) {
-            const config = queue.shift();
-            const result = await fetchReviewWithRetry(config);
-            results.push(result);
-            completed++;
-            updateProgress();
-        }
-    }
-
-    const workers = Array(Math.min(concurrencyLimit, studentConfigs.length)).fill().map(() => worker());
-    await Promise.all(workers);
-
-    const orderedResults = studentList.map(st => {
-        const found = results.find(r => r.studentId === st.id);
-        return found || { studentId: st.id, studentName: st.name, classId: st.classId, classContent, reviewText: '生成失败', charCount: 0 };
-    });
-
-    container.innerHTML = orderedResults.map((res, idx) => {
-        const wordInfo = res.charCount ? `（实际字数：${res.charCount}）` : '';
-        return `<div class="gen-card" data-idx="${idx}">
-            <div class="gen-card-header">
-                <span>👩‍🎓 ${escapeHtml(res.studentName)} ${wordInfo}</span>
-                <div>
-                    <button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button>
-                    <button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button>
-                </div>
-            </div>
-            <textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea>
-        </div>`;
-    }).join('');
-
-    orderedResults.forEach((res, idx) => {
-        const card = container.querySelector(`.gen-card[data-idx="${idx}"]`);
-        if (!card) return;
-        const copyBtn = card.querySelector(`.copy-single-btn`);
-        const saveBtn = card.querySelector(`.save-single-btn`);
-        const textarea = card.querySelector(`.gen-card-content`);
-        if (copyBtn) copyBtn.onclick = () => { navigator.clipboard.writeText(textarea.value); showToast(`已复制 ${res.studentName}`); };
-        if (saveBtn) saveBtn.onclick = async () => {
-            const finalReview = textarea.value.trim();
-            if (finalReview.includes('生成失败')) { showToast('课评无效', true); return; }
-            const now = new Date();
-            const recordTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-            await saveRecordToDB({
-                id: Date.now() + Math.floor(Math.random() * 10000),
-                studentId: res.studentId,
-                studentName: res.studentName,
-                classId: res.classId,
-                classContent: res.classContent,
-                reviewText: finalReview,
-                recordDate: recordTime
-            });
-            showToast(`已保存 ${res.studentName}`);
-            card.remove();
-        };
-    });
-
-    genBtn.disabled = false;
-    genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
-    showToast(`✅ 生成完成，共 ${orderedResults.length} 份课评`);
-}
+        // ========== 优化后的 generatePreviews（口语化 + 精确字数 + 多样性 + 不虚构 + 同学生不同课不雷同 + 优先使用表现信息） ==========
+        async function generatePreviews() {
             const classContent = document.getElementById('classContentInput').value.trim();
             if (!classContent) { showToast('请填写课堂内容', true); return; }
             const selectedBoxes = Array.from(document.querySelectorAll('.stuCheckItem:checked'));
             if (selectedBoxes.length === 0) { showToast('请至少选择一位学生', true); return; }
             const targetWords = parseInt(document.getElementById('wordSlider').value);
             const generalPerf = document.getElementById('generalPerf').value.trim();
-            const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
+            const apiConfig = {
+                apiKey: document.getElementById('apiKey').value.trim(),
+                modelId: document.getElementById('modelId').value.trim(),
+                endpoint: document.getElementById('endpoint').value.trim()
+            };
             if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
 
             const genBtn = document.getElementById('generatePreviewBtn');
-            genBtn.disabled = true; genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
+            genBtn.disabled = true;
+            genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
             const container = document.getElementById('generatedPreviews');
-            container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（无“你”字，多角度）...</div>';
+            container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（口语化+精确字数）...</div>';
 
-            // 收集待生成的学生信息
             const studentList = [];
             for (const cb of selectedBoxes) {
                 const sid = parseInt(cb.value);
@@ -991,88 +655,151 @@ async function generatePreviews() {
                     studentList.push({ id: student.id, name: student.name, classId: student.classId, perf });
                 }
             }
+            if (studentList.length === 0) { showToast('未找到有效学生', true); genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）'; return; }
 
-            // 角度池，让评价更多样
-            const angles = [
-                '学习态度与积极性', '课堂参与度与专注力', '思维敏捷与主动提问',
-                '练习完成准确性与书写习惯', '合作互动与倾听习惯', '进步幅度与学习韧性',
-                '自律性及课堂常规表现', '创新思维与解题灵活性','上课认真听讲的样子',  '跟着老师搭建/编程的参与度',
-            ];
+            const studentConfigs = studentList.map((student) => {
+                const dims = selectDimensions();
+                return {
+                    student,
+                    dims,
+                    style: randomPick(STYLE_POOL),
+                    opening: randomPick(OPENING_POOL),
+                    ending: randomPick(ENDING_POOL),
+                    seed: Math.random().toString(36).substring(2, 8)
+                };
+            });
 
-            // 针对单个学生的生成函数
-            async function fetchReviewForStudent(student, idx) {
-                const angle = angles[idx % angles.length];
-                const prompt = `请为“${student.name}”同学写一段课后评价，要求如下：
-1. 开头必须为“${student.name}本节课……”，结合课堂内容“${classContent}”展开。
-2. 字数严格控制在${targetWords}字左右，口语化亲切自然，像老师之间的日常交流。
-3. 重点围绕“${angle}”角度评价。具体表现：“${student.perf || '无特别说明'}”，如无特别说明则根据该角度合理描述。
-4. 非常重要：全文绝对不能出现“你”“她”“她”等字！直接叙述（如“上课很专注”“动手能力很强”），避免任何第二人称。
-5. 结尾用1-2个合适的emoji，并给出一句温暖的鼓励或小建议（同样不能出现“你”）。
-6. 确保评价与其他同学在用词、句式、细节上尽量不同，体现个性化。
-直接输出评价文本，不要加额外解释。
-7.内容中多用合适的表情包`;
-                
-                const res = await fetch(apiConfig.endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                    body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], max_tokens: Math.min(400, targetWords * 2 + 50), temperature: 0.85 })
-                });
-                if (!res.ok) throw new Error(`API请求失败 (${res.status})`);
-                const data = await res.json();
-                let review = data.choices?.[0]?.message?.content?.trim() || '生成失败，请重试';
-                // 后处理：移除残留的“你”
-                review = review.replace(/你/g, student.name);
-                if (!review.startsWith(student.name)) {
-                    review = student.name + '本节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
-                }
-                return review;
-            }
+            async function fetchReviewWithRetry(config, maxRetries = 2) {
+                const { student, dims, style, opening, ending } = config;
+                const dimStr = dims.join('、');
+                const perfInfo = student.perf || '无特别说明';
 
-            // 并发限制（最多3个同时）
-            const concurrencyLimit = 3;
-            const results = [];
-            const queue = [...studentList];
-            async function worker() {
-                while (queue.length) {
-                    const student = queue.shift();
-                    const idx = studentList.findIndex(s => s.id === student.id);
+                const prompt = `请为“${student.name}”同学写一段课后评语，要求如下：
+
+1. 开头必须为“${student.name}${opening}”，接着围绕课堂内容“${classContent}”展开。
+2. 【字数要求】必须严格控制在 ${targetWords} 字左右，正负不超过 3 字（即 ${targetWords-3}~${targetWords+3} 字）。你生成后自己数一下中文字数。
+3. 风格：${style}。
+4. 重点从以下方面聊：${dimStr}。
+5. 【非常重要】本次评价必须基于该生表现信息：“${perfInfo}”来写。如果该生表现有具体描述（例如“做题慢但准确率高”“今天主动举手了”），请务必在评价中明确引用或体现这些内容，作为评价的核心依据；如果该生表现是“无特别说明”或空，则根据课堂内容和维度进行合理推断，但不要捏造具体行为细节。
+6. 【关键】由于你只知道课堂内容“${classContent}”和该生表现“${perfInfo}”，并不知道其他具体细节，所以**不要虚构任何该生没有参与的具体环节、题号或话语**。请基于已有信息，从整体印象和课堂参与状态进行评价，描述该生的学习状态、专注程度、互动情况、完成任务的节奏等，所有评价必须紧扣本节课内容，不能跑题。
+7. 【新增】请特别注意：即使你曾经为这位同学写过其他课堂的评语，本次评价也必须**完全针对本节课“${classContent}”的特定内容**来写，避免使用“学习认真”“态度端正”等任何通用表述，要让读者一眼看出这是针对这节课的专属评价，与其他课堂的评价有明显差异。
+8. 禁止使用“表现良好”“积极发言”“认真听讲”这种空话套话，用口语化的真实感受，像老师随口说的话。
+9. 全文不能出现“你”“她”“他”字，直接用名字或“该生”，或者直接说事（比如“上课很专注”）。
+10. 结尾：${ending}。
+11. 确保这段评语跟其他同学的评语在选词、句式和侧重点上都不一样，避免雷同。
+12. 适当加表情符号（比如😊、👍、😂之类），自然就好。
+
+直接输出评语文本，不要加任何额外解释。`;
+
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
                     try {
-                        const review = await fetchReviewForStudent(student, idx);
-                        results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review });
+                        const res = await fetch(apiConfig.endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
+                            body: JSON.stringify({
+                                model: apiConfig.modelId,
+                                messages: [{ role: 'user', content: prompt }],
+                                max_tokens: Math.min(600, targetWords * 2 + 80),
+                                temperature: 0.85 + (Math.random() * 0.15),
+                                top_p: 0.92
+                            })
+                        });
+                        if (!res.ok) throw new Error(`API请求失败 (${res.status})`);
+                        const data = await res.json();
+                        let review = data.choices?.[0]?.message?.content?.trim() || '生成失败';
+                        review = review.replace(/[你她他]/g, student.name);
+                        if (!review.startsWith(student.name)) {
+                            review = student.name + '这节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
+                        }
+                        const charCount = countChineseChars(review);
+                        const diff = Math.abs(charCount - targetWords);
+                        if (diff <= 5 || attempt === maxRetries) {
+                            return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: review, charCount };
+                        } else {
+                            console.log(`字数偏差 ${charCount} vs ${targetWords}，重试 ${attempt+1}`);
+                        }
                     } catch (err) {
                         console.error(err);
-                        results.push({ studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}` });
+                        if (attempt === maxRetries) {
+                            return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: `生成失败: ${err.message}`, charCount: 0 };
+                        }
                     }
-                    // 更新提示（简单展示进度）
-                    container.innerHTML = `<div class="info-note">⏳ 正在生成中... 已完成 ${results.length}/${studentList.length}</div>`;
+                }
+                return { studentId: student.id, studentName: student.name, classId: student.classId, classContent, reviewText: '生成失败，请重试', charCount: 0 };
+            }
+
+            const concurrencyLimit = 3;
+            const results = [];
+            const queue = [...studentConfigs];
+            let completed = 0;
+            const updateProgress = () => {
+                container.innerHTML = `<div class="info-note">⏳ 生成中... ${completed}/${studentList.length}</div>`;
+            };
+
+            async function worker() {
+                while (queue.length) {
+                    const config = queue.shift();
+                    const result = await fetchReviewWithRetry(config);
+                    results.push(result);
+                    completed++;
+                    updateProgress();
                 }
             }
-            const workers = Array(Math.min(concurrencyLimit, studentList.length)).fill().map(() => worker());
-            await Promise.all(workers);
-            // 按原始顺序排序
-            const orderedResults = studentList.map(st => results.find(r => r.studentId === st.id) || { studentId: st.id, studentName: st.name, classId: st.classId, classContent, reviewText: '生成失败' });
 
-            // 渲染结果卡片（与原样式一致）
-            container.innerHTML = orderedResults.map((res, idx) => `<div class="gen-card" data-idx="${idx}"><div class="gen-card-header"><span>👩‍🎓 ${escapeHtml(res.studentName)}</span><div><button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button><button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button></div></div><textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea></div>`).join('');
+            const workers = Array(Math.min(concurrencyLimit, studentConfigs.length)).fill().map(() => worker());
+            await Promise.all(workers);
+
+            const orderedResults = studentList.map(st => {
+                const found = results.find(r => r.studentId === st.id);
+                return found || { studentId: st.id, studentName: st.name, classId: st.classId, classContent, reviewText: '生成失败', charCount: 0 };
+            });
+
+            container.innerHTML = orderedResults.map((res, idx) => {
+                const wordInfo = res.charCount ? `（实际字数：${res.charCount}）` : '';
+                return `<div class="gen-card" data-idx="${idx}">
+                    <div class="gen-card-header">
+                        <span>👩‍🎓 ${escapeHtml(res.studentName)} ${wordInfo}</span>
+                        <div>
+                            <button class="btn btn-sm copy-single-btn" data-idx="${idx}">📋 复制课评</button>
+                            <button class="btn btn-sm btn-success save-single-btn" data-idx="${idx}">💾 保存到记录</button>
+                        </div>
+                    </div>
+                    <textarea class="gen-card-content" data-idx="${idx}" rows="5">${escapeHtml(res.reviewText)}</textarea>
+                </div>`;
+            }).join('');
+
             orderedResults.forEach((res, idx) => {
-                const copyBtn = container.querySelector(`.copy-single-btn[data-idx="${idx}"]`);
-                const saveBtn = container.querySelector(`.save-single-btn[data-idx="${idx}"]`);
-                const textarea = container.querySelector(`.gen-card-content[data-idx="${idx}"]`);
+                const card = container.querySelector(`.gen-card[data-idx="${idx}"]`);
+                if (!card) return;
+                const copyBtn = card.querySelector(`.copy-single-btn`);
+                const saveBtn = card.querySelector(`.save-single-btn`);
+                const textarea = card.querySelector(`.gen-card-content`);
                 if (copyBtn) copyBtn.onclick = () => { navigator.clipboard.writeText(textarea.value); showToast(`已复制 ${res.studentName}`); };
                 if (saveBtn) saveBtn.onclick = async () => {
                     const finalReview = textarea.value.trim();
                     if (finalReview.includes('生成失败')) { showToast('课评无效', true); return; }
                     const now = new Date();
                     const recordTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-                    await saveRecordToDB({ id: Date.now() + Math.floor(Math.random() * 10000), studentId: res.studentId, studentName: res.studentName, classId: res.classId, classContent: res.classContent, reviewText: finalReview, recordDate: recordTime });
+                    await saveRecordToDB({
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        studentId: res.studentId,
+                        studentName: res.studentName,
+                        classId: res.classId,
+                        classContent: res.classContent,
+                        reviewText: finalReview,
+                        recordDate: recordTime
+                    });
                     showToast(`已保存 ${res.studentName}`);
-                    const card = saveBtn.closest('.gen-card'); if(card) card.remove();
+                    card.remove();
                 };
             });
-            genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
+
+            genBtn.disabled = false;
+            genBtn.innerHTML = '✨ 生成课评预览（可编辑）';
+            showToast(`✅ 生成完成，共 ${orderedResults.length} 份课评`);
         }
 
-        // 课堂记录列表（保持不变）
+        // ========== 课堂记录列表 ==========
         async function refreshRecordList() {
             const classFilterVal = document.getElementById('recordClassFilter').value;
             const nameFilterVal = document.getElementById('recordNameSearch').value.trim().toLowerCase();
@@ -1121,7 +848,7 @@ async function generatePreviews() {
         async function batchDeleteRecords() { const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value)); if (!checked.length) { showToast('请选择记录', true); return; } if (confirm(`删除 ${checked.length} 条记录`)) { await deleteRecordsBatch(checked); showToast('已删除'); } }
         function selectAllRecords() { document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = document.getElementById('recordSelectAllCheckbox').checked); }
 
-        // 月度整合（保持不变）
+        // ========== 月度整合（单学生） ==========
         async function refreshMonthlyStudentSelect() {
             const classFilter = document.getElementById('monthlyClassFilter').value;
             const nameSearch = document.getElementById('monthlyNameSearch').value.trim().toLowerCase();
@@ -1134,7 +861,10 @@ async function generatePreviews() {
                 sel.innerHTML = '<option value="">请选择学生</option>' + filtered.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
             }
             if (filtered.length === 1) sel.value = filtered[0].id;
+            // 同步刷新批量列表
+            renderBatchStudentList();
         }
+
         async function viewMonthRecords() {
             const studentId = parseInt(document.getElementById('studentSelect').value);
             const monthVal = document.getElementById('monthPicker').value;
@@ -1145,6 +875,7 @@ async function generatePreviews() {
             const preview = monthRecords.map(r => `【${r.recorddate.slice(5,10)}】${r.reviewText}`).join('\n\n');
             document.getElementById('monthlySummaryEditable').value = preview || '暂无课评记录';
         }
+
         async function generateMonthlySummary() {
             const studentId = parseInt(document.getElementById('studentSelect').value);
             const monthVal = document.getElementById('monthPicker').value;
@@ -1167,12 +898,128 @@ async function generatePreviews() {
             } catch(e) { showToast('整合失败', true); } finally { genBtn.disabled = false; genBtn.innerHTML = '✨ 生成月度课评总结'; }
         }
 
-        // 导入导出备份（保持不变）
+        // ========== 批量月度生成 ==========
+        function renderBatchStudentList() {
+            const container = document.getElementById('batchStudentListContainer');
+            if (!container) return;
+            const classFilter = document.getElementById('monthlyClassFilter')?.value || '';
+            const nameSearch = document.getElementById('monthlyNameSearch')?.value.trim().toLowerCase() || '';
+            const filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="info-note">暂无学生，请调整筛选条件或添加学生</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(s => `<div class="batch-student-item"><input type="checkbox" class="batch-student-cb" value="${s.id}" id="batch_${s.id}"> <label for="batch_${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</label></div>`).join('');
+        }
+
+        function selectAllBatch(selectAll) {
+            document.querySelectorAll('.batch-student-cb').forEach(cb => cb.checked = selectAll);
+        }
+
+        async function batchGenerateSummaries() {
+            const selectedCbs = Array.from(document.querySelectorAll('.batch-student-cb:checked'));
+            if (selectedCbs.length === 0) { showToast('请至少选择一名学生', true); return; }
+            const monthVal = document.getElementById('monthPicker').value;
+            if (!monthVal) { showToast('请选择月份', true); return; }
+            const targetWords = parseInt(document.getElementById('monthWordSlider').value);
+            const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
+            if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
+
+            const studentIds = selectedCbs.map(cb => parseInt(cb.value));
+            const studentsData = studentIds.map(id => students.find(s => s.id === id)).filter(s => s);
+            if (studentsData.length === 0) return;
+
+            const batchContainer = document.getElementById('batchResultsContainer');
+            const progressSpan = document.getElementById('batchProgressMsg');
+            const batchBtn = document.getElementById('batchGenerateSummariesBtn');
+            batchBtn.disabled = true; batchBtn.innerHTML = '<span class="loading-spinner"></span> 批量生成中...';
+            batchContainer.innerHTML = '<div class="progress-indicator">⏳ 准备生成，请稍候...</div>';
+
+            const concurrency = 3;
+            const results = [];
+            const queue = [...studentsData];
+            let completed = 0;
+            const updateProgress = () => { if(progressSpan) progressSpan.innerText = `进度: ${completed}/${studentsData.length}`; };
+
+            async function generateForStudent(student) {
+                try {
+                    const monthRecords = records.filter(r => r.studentId === student.id && r.recorddate && r.recorddate.startsWith(monthVal));
+                    if (monthRecords.length === 0) return { student, error: '本月无任何课堂记录', contentSummaryHtml: '无记录', summary: '' };
+                    const classContentsList = [...new Set(monthRecords.map(r => r.classContent))];
+                    const contentSummaryHtml = classContentsList.map(c => `• ${escapeHtml(c)}`).join('<br>');
+                    const rawFeedback = monthRecords.map(r => `- ${r.reviewText}`).join('\n');
+                    const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，语言亲切自然，不要出现“你”字，写成连贯段落，总结孩子本月表现和进步。\n原始课评：\n${rawFeedback}`;
+                    const res = await fetch(apiConfig.endpoint, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
+                        body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: Math.min(500, targetWords+80) })
+                    });
+                    if (!res.ok) throw new Error(`API ${res.status}`);
+                    const data = await res.json();
+                    let summary = data.choices?.[0]?.message?.content?.trim() || '生成失败，请重试';
+                    summary = summary.replace(/你/g, student.name);
+                    return { student, contentSummary: classContentsList, contentSummaryHtml, summary, error: null };
+                } catch (err) {
+                    return { student, error: err.message, contentSummaryHtml: '获取失败', summary: '' };
+                }
+            }
+
+            async function worker() {
+                while (queue.length) {
+                    const student = queue.shift();
+                    const result = await generateForStudent(student);
+                    results.push(result);
+                    completed++;
+                    updateProgress();
+                    const card = document.createElement('div');
+                    card.className = 'batch-result-card';
+                    card.style.padding = '12px';
+                    card.style.marginBottom = '12px';
+                    card.style.border = '1px solid #FFE6DC';
+                    card.style.borderRadius = '1rem';
+                    const stuName = escapeHtml(result.student.name);
+                    if (result.error) {
+                        card.innerHTML = `<div style="font-weight:bold;">❌ ${stuName}</div><div class="info-note" style="color:red;">生成失败: ${result.error}</div>`;
+                    } else {
+                        card.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;"><strong>📌 ${stuName}</strong>
+                            <div><button class="btn btn-sm copyBatchContentBtn" data-student="${result.student.id}" data-type="content">📋 复制课堂内容</button> <button class="btn btn-sm copyBatchSummaryBtn" data-student="${result.student.id}" data-type="summary">📋 复制月度总结</button></div></div>
+                            <div><strong>📚 课堂内容汇总：</strong><div class="result-preview" style="background:#FFF8F0; margin-top:4px;">${result.contentSummaryHtml || '无'}</div></div>
+                            <div style="margin-top:10px;"><strong>🤖 月度总结：</strong><textarea rows="4" class="batch-summary-textarea" data-student="${result.student.id}" style="width:100%; margin-top:4px; border-radius:1rem; border:1px solid #FFD4C2; padding:8px;">${escapeHtml(result.summary)}</textarea></div>
+                        `;
+                    }
+                    batchContainer.appendChild(card);
+                    card.querySelectorAll('.copyBatchContentBtn').forEach(btn => btn.addEventListener('click', () => { const txt = card.querySelector('.result-preview')?.innerText; if(txt) navigator.clipboard.writeText(txt); showToast('已复制课堂内容汇总'); }));
+                    card.querySelectorAll('.copyBatchSummaryBtn').forEach(btn => btn.addEventListener('click', () => { const txtarea = card.querySelector('.batch-summary-textarea'); if(txtarea) navigator.clipboard.writeText(txtarea.value); showToast('已复制月度总结'); }));
+                }
+            }
+            const workers = Array(Math.min(concurrency, studentsData.length)).fill().map(() => worker());
+            await Promise.all(workers);
+            batchBtn.disabled = false; batchBtn.innerHTML = '🚀 批量生成月度总结 + 课堂内容汇总';
+            if(progressSpan) progressSpan.innerText = `批量完成，共生成 ${results.length} 份总结`;
+            if (results.some(r => r.error)) showToast('部分学生生成失败，请检查API配置或记录', true);
+            else showToast('批量生成完成');
+        }
+
+        function bindMonthlyBatchEvents() {
+            const batchGenerateBtn = document.getElementById('batchGenerateSummariesBtn');
+            if (batchGenerateBtn) batchGenerateBtn.addEventListener('click', batchGenerateSummaries);
+            const selectAllBtn = document.getElementById('batchSelectAllBtn');
+            if (selectAllBtn) selectAllBtn.addEventListener('click', () => selectAllBatch(true));
+            const clearAllBtn = document.getElementById('batchClearAllBtn');
+            if (clearAllBtn) clearAllBtn.addEventListener('click', () => selectAllBatch(false));
+            const clearResultsBtn = document.getElementById('clearBatchResultsBtn');
+            if (clearResultsBtn) clearResultsBtn.addEventListener('click', () => { document.getElementById('batchResultsContainer').innerHTML = ''; document.getElementById('batchProgressMsg').innerText = ''; });
+            document.getElementById('refreshMonthlyStudentBtn')?.addEventListener('click', () => { refreshMonthlyStudentSelect(); });
+            document.getElementById('monthlyClassFilter')?.addEventListener('change', refreshMonthlyStudentSelect);
+            document.getElementById('monthlyNameSearch')?.addEventListener('input', refreshMonthlyStudentSelect);
+        }
+
+        // ========== 导入导出备份 ==========
         async function exportData() { const exportObj = { classes, students, records }; const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`课评系统_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast('导出成功'); }
         async function importData(file) { const reader=new FileReader(); reader.onload=async (e)=>{ try{ const data=JSON.parse(e.target.result); if(data.classes) for(let c of data.classes) await db.from(TABLES.classes).upsert(c); if(data.students) for(let s of data.students) await db.from(TABLES.students).upsert(s); if(data.records) for(let r of data.records) await db.from(TABLES.records).upsert(r); await refreshAllData(); showToast('导入成功'); }catch(err){ showToast('文件错误',true); } }; reader.readAsText(file); }
         async function clearAllData() { if(confirm('清空所有数据（班级、学生、记录）不可恢复')){ await db.from(TABLES.records).delete().neq('id',0); await db.from(TABLES.students).delete().neq('id',0); await db.from(TABLES.classes).delete().neq('id',0); await refreshAllData(); showToast('已清空'); } }
 
-        // 事件绑定与初始化
+        // ========== 主初始化 ==========
         async function initMainSystem() {
             initSupabase();
             await refreshAllData();
@@ -1262,146 +1109,9 @@ async function generatePreviews() {
 
             refreshClassSelects();
             renderAllByTab();
-            // ========== 月度批量生成功能 ==========
-// 渲染批量学生列表（基于筛选）
-function renderBatchStudentList() {
-    const container = document.getElementById('batchStudentListContainer');
-    if (!container) return;
-    const classFilter = document.getElementById('monthlyClassFilter')?.value || '';
-    const nameSearch = document.getElementById('monthlyNameSearch')?.value.trim().toLowerCase() || '';
-    const filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
-    if (filtered.length === 0) {
-        container.innerHTML = '<div class="info-note">暂无学生，请调整筛选条件或添加学生</div>';
-        return;
-    }
-    container.innerHTML = filtered.map(s => `<div class="batch-student-item"><input type="checkbox" class="batch-student-cb" value="${s.id}" id="batch_${s.id}"> <label for="batch_${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</label></div>`).join('');
-}
-
-function selectAllBatch(selectAll) {
-    document.querySelectorAll('.batch-student-cb').forEach(cb => cb.checked = selectAll);
-}
-
-// 批量生成月度总结+内容汇总
-async function batchGenerateSummaries() {
-    const selectedCbs = Array.from(document.querySelectorAll('.batch-student-cb:checked'));
-    if (selectedCbs.length === 0) { showToast('请至少选择一名学生', true); return; }
-    const monthVal = document.getElementById('monthPicker').value;
-    if (!monthVal) { showToast('请选择月份', true); return; }
-    const targetWords = parseInt(document.getElementById('monthWordSlider').value);
-    const apiConfig = { apiKey: document.getElementById('apiKey').value.trim(), modelId: document.getElementById('modelId').value.trim(), endpoint: document.getElementById('endpoint').value.trim() };
-    if (!apiConfig.apiKey || !apiConfig.modelId) { showToast('请先配置豆包API', true); return; }
-
-    const studentIds = selectedCbs.map(cb => parseInt(cb.value));
-    const studentsData = studentIds.map(id => students.find(s => s.id === id)).filter(s => s);
-    if (studentsData.length === 0) return;
-
-    const batchContainer = document.getElementById('batchResultsContainer');
-    const progressSpan = document.getElementById('batchProgressMsg');
-    const batchBtn = document.getElementById('batchGenerateSummariesBtn');
-    batchBtn.disabled = true; batchBtn.innerHTML = '<span class="loading-spinner"></span> 批量生成中...';
-    batchContainer.innerHTML = '<div class="progress-indicator">⏳ 准备生成，请稍候...</div>';
-
-    const concurrency = 3;
-    const results = [];
-    const queue = [...studentsData];
-    let completed = 0;
-    const updateProgress = () => { if(progressSpan) progressSpan.innerText = `进度: ${completed}/${studentsData.length}`; };
-
-    async function generateForStudent(student) {
-        try {
-            const monthRecords = records.filter(r => r.studentId === student.id && r.recorddate && r.recorddate.startsWith(monthVal));
-            if (monthRecords.length === 0) return { student, error: '本月无任何课堂记录', contentSummaryHtml: '无记录', summary: '' };
-            const classContentsList = [...new Set(monthRecords.map(r => r.classContent))];
-            const contentSummaryHtml = classContentsList.map(c => `• ${escapeHtml(c)}`).join('<br>');
-            const rawFeedback = monthRecords.map(r => `- ${r.reviewText}`).join('\n');
-            const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，语言亲切自然，不要出现“你”字，写成连贯段落，总结孩子本月表现和进步。\n原始课评：\n${rawFeedback}`;
-            const res = await fetch(apiConfig.endpoint, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: Math.min(500, targetWords+80) })
-            });
-            if (!res.ok) throw new Error(`API ${res.status}`);
-            const data = await res.json();
-            let summary = data.choices?.[0]?.message?.content?.trim() || '生成失败，请重试';
-            summary = summary.replace(/你/g, student.name);
-            return { student, contentSummary: classContentsList, contentSummaryHtml, summary, error: null };
-        } catch (err) {
-            return { student, error: err.message, contentSummaryHtml: '获取失败', summary: '' };
-        }
-    }
-
-    async function worker() {
-        while (queue.length) {
-            const student = queue.shift();
-            const result = await generateForStudent(student);
-            results.push(result);
-            completed++;
-            updateProgress();
-            const card = document.createElement('div');
-            card.className = 'batch-result-card';
-            card.style.padding = '12px';
-            card.style.marginBottom = '12px';
-            card.style.border = '1px solid #FFE6DC';
-            card.style.borderRadius = '1rem';
-            const stuName = escapeHtml(result.student.name);
-            if (result.error) {
-                card.innerHTML = `<div style="font-weight:bold;">❌ ${stuName}</div><div class="info-note" style="color:red;">生成失败: ${result.error}</div>`;
-            } else {
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;"><strong>📌 ${stuName}</strong>
-                    <div><button class="btn btn-sm copyBatchContentBtn" data-student="${result.student.id}" data-type="content">📋 复制课堂内容</button> <button class="btn btn-sm copyBatchSummaryBtn" data-student="${result.student.id}" data-type="summary">📋 复制月度总结</button></div></div>
-                    <div><strong>📚 课堂内容汇总：</strong><div class="result-preview" style="background:#FFF8F0; margin-top:4px;">${result.contentSummaryHtml || '无'}</div></div>
-                    <div style="margin-top:10px;"><strong>🤖 月度总结：</strong><textarea rows="4" class="batch-summary-textarea" data-student="${result.student.id}" style="width:100%; margin-top:4px; border-radius:1rem; border:1px solid #FFD4C2; padding:8px;">${escapeHtml(result.summary)}</textarea></div>
-                `;
-            }
-            batchContainer.appendChild(card);
-            card.querySelectorAll('.copyBatchContentBtn').forEach(btn => btn.addEventListener('click', () => { const txt = card.querySelector('.result-preview')?.innerText; if(txt) navigator.clipboard.writeText(txt); showToast('已复制课堂内容汇总'); }));
-            card.querySelectorAll('.copyBatchSummaryBtn').forEach(btn => btn.addEventListener('click', () => { const txtarea = card.querySelector('.batch-summary-textarea'); if(txtarea) navigator.clipboard.writeText(txtarea.value); showToast('已复制月度总结'); }));
-        }
-    }
-    const workers = Array(Math.min(concurrency, studentsData.length)).fill().map(() => worker());
-    await Promise.all(workers);
-    batchBtn.disabled = false; batchBtn.innerHTML = '🚀 批量生成月度总结 + 课堂内容汇总';
-    if(progressSpan) progressSpan.innerText = `批量完成，共生成 ${results.length} 份总结`;
-    if (results.some(r => r.error)) showToast('部分学生生成失败，请检查API配置或记录', true);
-    else showToast('批量生成完成');
-}
-
-// 重写原有的 refreshMonthlyStudentSelect 以同时刷新批量列表
-const originalRefreshMonthly = window.refreshMonthlyStudentSelect;
-window.refreshMonthlyStudentSelect = function() {
-    const classFilter = document.getElementById('monthlyClassFilter').value;
-    const nameSearch = document.getElementById('monthlyNameSearch').value.trim().toLowerCase();
-    let filtered = students.filter(s => (!classFilter || s.classId == classFilter) && (!nameSearch || s.name.toLowerCase().includes(nameSearch)));
-    const sel = document.getElementById('studentSelect');
-    if (sel) {
-        if (filtered.length === 0) sel.innerHTML = '<option value="">-- 暂无学生，请先添加 --</option>';
-        else sel.innerHTML = '<option value="">请选择学生</option>' + filtered.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${getClassNameById(s.classId)})</option>`).join('');
-        if (filtered.length === 1) sel.value = filtered[0].id;
-    }
-    // 新增：渲染批量列表
-    renderBatchStudentList();
-};
-
-// 绑定批量相关事件
-function bindMonthlyBatchEvents() {
-    const batchGenerateBtn = document.getElementById('batchGenerateSummariesBtn');
-    if (batchGenerateBtn) batchGenerateBtn.addEventListener('click', batchGenerateSummaries);
-    const selectAllBtn = document.getElementById('batchSelectAllBtn');
-    if (selectAllBtn) selectAllBtn.addEventListener('click', () => selectAllBatch(true));
-    const clearAllBtn = document.getElementById('batchClearAllBtn');
-    if (clearAllBtn) clearAllBtn.addEventListener('click', () => selectAllBatch(false));
-    const clearResultsBtn = document.getElementById('clearBatchResultsBtn');
-    if (clearResultsBtn) clearResultsBtn.addEventListener('click', () => { document.getElementById('batchResultsContainer').innerHTML = ''; document.getElementById('batchProgressMsg').innerText = ''; });
-    document.getElementById('refreshMonthlyStudentBtn')?.addEventListener('click', () => { window.refreshMonthlyStudentSelect(); });
-    document.getElementById('monthlyClassFilter')?.addEventListener('change', window.refreshMonthlyStudentSelect);
-    document.getElementById('monthlyNameSearch')?.addEventListener('input', window.refreshMonthlyStudentSelect);
-}
-
-// 调用绑定（放在 initMainSystem 末尾）
-bindMonthlyBatchEvents();
-// 初始化批量列表
-renderBatchStudentList();
-            console.log('初始化完成，所有事件已绑定 (课评生成已升级为无“你”、多角度并发模式)');
+            bindMonthlyBatchEvents();
+            renderBatchStudentList();
+            console.log('初始化完成，所有事件已绑定 (课评生成已升级为口语化、精确字数、高多样性、不虚构、同学生不同课不雷同、优先使用表现信息)');
         }
 
         checkLoginStatus();

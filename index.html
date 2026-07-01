@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -109,6 +109,7 @@
             margin: 8px 0;
             text-align: center;
         }
+        .batch-edit-modal textarea { width: 100%; margin-bottom: 10px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -186,12 +187,23 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header"><span>📋 课堂记录</span><div class="flex-btns"><button id="batchDeleteBtn" class="btn btn-sm btn-danger">🗑️ 批量删除</button><button id="selectAllRecordsBtn" class="btn btn-sm">✅ 全选</button><button id="addRecordBtn" class="btn btn-sm btn-primary">➕ 新增记录</button></div></div>
+                <div class="card-header"><span>📋 课堂记录</span>
+                    <div class="flex-btns">
+                        <button id="batchDeleteBtn" class="btn btn-sm btn-danger">🗑️ 批量删除选中</button>
+                        <button id="batchEditSelectedBtn" class="btn btn-sm btn-primary">✏️ 批量编辑选中</button>
+                        <button id="batchDeleteFilteredBtn" class="btn btn-sm btn-danger">🗑️ 删除筛选结果</button>
+                        <button id="selectAllRecordsBtn" class="btn btn-sm">✅ 全选</button>
+                        <button id="addRecordBtn" class="btn btn-sm btn-primary">➕ 新增记录</button>
+                    </div>
+                </div>
                 <div class="card-body">
                     <div class="filter-bar">
-                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="recordClassFilter"><option value="">全部班级</option></select></div>
-                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 学生姓名</label><input type="text" id="recordNameSearch" placeholder="输入学生姓名"></div>
-                        <button id="searchRecordsBtn" class="btn btn-sm">🔍 筛选</button><button id="resetRecordsBtn" class="btn btn-sm">重置</button>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级</label><select id="recordClassFilter"><option value="">全部班级</option></select></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名</label><input type="text" id="recordNameSearch" placeholder="输入学生姓名"></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>📅 开始日期</label><input type="date" id="recordDateFrom"></div>
+                        <div class="form-group" style="flex:1; margin-bottom:0;"><label>📅 结束日期</label><input type="date" id="recordDateTo"></div>
+                        <button id="searchRecordsBtn" class="btn btn-sm">🔍 筛选</button>
+                        <button id="resetRecordsBtn" class="btn btn-sm">重置</button>
                     </div>
                     <div class="table-wrapper"><table class="data-table"><thead><tr><th><input type="checkbox" id="recordSelectAllCheckbox"></th><th>学生</th><th>班级</th><th>课堂内容</th><th>课评</th><th>时间</th><th>操作</th></tr></thead><tbody id="recordTbody"></tbody></table></div>
                 </div>
@@ -257,6 +269,19 @@
         <div class="flex-btns" style="justify-content: flex-end; gap: 10px;">
             <button id="closeModalBtn" class="btn">取消</button>
             <button id="confirmAddRecordBtn" class="btn btn-primary">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 批量编辑模态框 -->
+<div id="batchEditModal" class="modal-mask">
+    <div class="record-modal batch-edit-modal">
+        <h3>✏️ 批量编辑选中记录</h3>
+        <div class="form-group"><label>新的课堂内容（留空则不修改）</label><textarea id="batchEditClassContent" rows="2" placeholder="输入新的课堂内容"></textarea></div>
+        <div class="form-group"><label>新的课评（留空则不修改）</label><textarea id="batchEditReviewText" rows="4" placeholder="输入新的课评"></textarea></div>
+        <div class="flex-btns" style="justify-content: flex-end; gap: 10px; margin-top:10px;">
+            <button id="closeBatchEditBtn" class="btn">取消</button>
+            <button id="confirmBatchEditBtn" class="btn btn-primary">确认修改</button>
         </div>
     </div>
 </div>
@@ -421,6 +446,7 @@
             await refreshAllData();
         }
         async function deleteRecordsBatch(ids) {
+            if (!ids.length) return;
             for (let id of ids) await db.from(TABLES.records).delete().eq('id', id);
             await refreshAllData();
         }
@@ -567,7 +593,7 @@
             return chinese ? chinese.length : 0;
         }
 
-        // ========== 简化后的 generatePreviews（基于课堂内容 + 学生表现，强制不雷同） ==========
+        // ========== 课评生成 ==========
         async function generatePreviews() {
             const classContent = document.getElementById('classContentInput').value.trim();
             if (!classContent) { showToast('请填写课堂内容', true); return; }
@@ -601,9 +627,7 @@
 
             async function fetchReviewForStudent(student, maxRetries = 2) {
                 const perfInfo = student.perf || '无特别说明';
-                // 每个请求使用不同的随机温度（0.7~1.1），增加多样性
                 const temperature = 0.7 + Math.random() * 0.4;
-
                 const prompt = `请为“${student.name}”同学写一段课后评语，要求如下：
 
 1. 开头直接以“${student.name}本节课……”开始，围绕课堂内容“${classContent}”展开。
@@ -725,11 +749,28 @@
             showToast(`✅ 生成完成，共 ${orderedResults.length} 份课评`);
         }
 
-        // ========== 课堂记录列表 ==========
+        // ========== 课堂记录列表（含日期筛选） ==========
         async function refreshRecordList() {
             const classFilterVal = document.getElementById('recordClassFilter').value;
             const nameFilterVal = document.getElementById('recordNameSearch').value.trim().toLowerCase();
-            let filtered = records.filter(r => (!classFilterVal || r.classId == classFilterVal) && (!nameFilterVal || r.studentName.toLowerCase().includes(nameFilterVal)));
+            const dateFrom = document.getElementById('recordDateFrom').value;
+            const dateTo = document.getElementById('recordDateTo').value;
+
+            let filtered = records.filter(r => {
+                let match = true;
+                if (classFilterVal && r.classId != classFilterVal) match = false;
+                if (nameFilterVal && !r.studentName.toLowerCase().includes(nameFilterVal)) match = false;
+                if (dateFrom) {
+                    const recDate = r.recorddate ? r.recorddate.slice(0,10) : '';
+                    if (recDate < dateFrom) match = false;
+                }
+                if (dateTo) {
+                    const recDate = r.recorddate ? r.recorddate.slice(0,10) : '';
+                    if (recDate > dateTo) match = false;
+                }
+                return match;
+            });
+
             const tbody = document.getElementById('recordTbody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -751,12 +792,14 @@
             });
             bindRecordEvents();
         }
+
         function bindRecordEvents() {
             document.querySelectorAll('.saveRecordBtn').forEach(btn => btn.addEventListener('click', async (e) => { const rid = parseInt(btn.dataset.id); await saveRecordEdit(rid); }));
             document.querySelectorAll('.delRecordBtn').forEach(btn => btn.addEventListener('click', async (e) => { const rid = parseInt(btn.dataset.id); if (confirm('删除该记录？')) await deleteRecordById(rid); }));
             document.querySelectorAll('.rec-date-edit').forEach(inp => inp.addEventListener('change', async (e) => { const rid = parseInt(inp.dataset.id); const rec = records.find(r => r.id === rid); if (rec) { rec.recorddate = inp.value.replace('T', ' '); await saveRecordToDB(rec); showToast('时间已更新'); } }));
             document.querySelectorAll('.editable-class, .editable-review').forEach(div => div.addEventListener('click', async (e) => { const rid = parseInt(div.dataset.id); const rec = records.find(r => r.id === rid); if (rec) { const field = div.classList.contains('editable-class') ? 'classContent' : 'reviewText'; const newVal = prompt(`修改${field === 'classContent' ? '课堂内容' : '课评'}`, rec[field]); if (newVal && newVal.trim()) { rec[field] = newVal.trim(); await saveRecordToDB(rec); showToast('已更新'); } } }));
         }
+
         async function saveRecordEdit(rid) {
             const rec = records.find(r => r.id === rid);
             if (!rec) return;
@@ -771,8 +814,87 @@
                 showToast('记录已更新');
             }
         }
-        async function batchDeleteRecords() { const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value)); if (!checked.length) { showToast('请选择记录', true); return; } if (confirm(`删除 ${checked.length} 条记录`)) { await deleteRecordsBatch(checked); showToast('已删除'); } }
-        function selectAllRecords() { document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = document.getElementById('recordSelectAllCheckbox').checked); }
+
+        // 批量删除选中
+        async function batchDeleteRecords() {
+            const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!checked.length) { showToast('请选择记录', true); return; }
+            if (confirm(`删除 ${checked.length} 条记录`)) {
+                await deleteRecordsBatch(checked);
+                showToast('已删除');
+            }
+        }
+
+        // 全选/取消全选
+        function selectAllRecords() {
+            document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = document.getElementById('recordSelectAllCheckbox').checked);
+        }
+
+        // 批量编辑选中
+        function batchEditSelected() {
+            const checked = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!checked.length) { showToast('请选择要编辑的记录', true); return; }
+            // 显示批量编辑模态框
+            document.getElementById('batchEditClassContent').value = '';
+            document.getElementById('batchEditReviewText').value = '';
+            document.getElementById('batchEditModal').classList.add('show');
+            // 存储选中的id以便确认时使用
+            document.getElementById('batchEditModal').dataset.ids = JSON.stringify(checked);
+        }
+
+        async function confirmBatchEdit() {
+            const modal = document.getElementById('batchEditModal');
+            const ids = JSON.parse(modal.dataset.ids || '[]');
+            if (!ids.length) { showToast('无选中记录', true); return; }
+            const newClassContent = document.getElementById('batchEditClassContent').value.trim();
+            const newReviewText = document.getElementById('batchEditReviewText').value.trim();
+            if (!newClassContent && !newReviewText) { showToast('请至少填写一项修改内容', true); return; }
+
+            // 获取要修改的记录
+            const toUpdate = records.filter(r => ids.includes(r.id));
+            if (!toUpdate.length) { showToast('记录不存在', true); return; }
+
+            for (let rec of toUpdate) {
+                if (newClassContent) rec.classContent = newClassContent;
+                if (newReviewText) rec.reviewText = newReviewText;
+                await saveRecordToDB(rec);
+            }
+            showToast(`已更新 ${toUpdate.length} 条记录`);
+            modal.classList.remove('show');
+            await refreshRecordList();
+        }
+
+        // 批量删除筛选结果
+        async function batchDeleteFiltered() {
+            // 获取当前筛选条件
+            const classFilterVal = document.getElementById('recordClassFilter').value;
+            const nameFilterVal = document.getElementById('recordNameSearch').value.trim().toLowerCase();
+            const dateFrom = document.getElementById('recordDateFrom').value;
+            const dateTo = document.getElementById('recordDateTo').value;
+
+            let filtered = records.filter(r => {
+                let match = true;
+                if (classFilterVal && r.classId != classFilterVal) match = false;
+                if (nameFilterVal && !r.studentName.toLowerCase().includes(nameFilterVal)) match = false;
+                if (dateFrom) {
+                    const recDate = r.recorddate ? r.recorddate.slice(0,10) : '';
+                    if (recDate < dateFrom) match = false;
+                }
+                if (dateTo) {
+                    const recDate = r.recorddate ? r.recorddate.slice(0,10) : '';
+                    if (recDate > dateTo) match = false;
+                }
+                return match;
+            });
+
+            if (!filtered.length) { showToast('当前筛选条件下无记录可删除', true); return; }
+            if (confirm(`确定删除当前筛选条件下的 ${filtered.length} 条记录吗？此操作不可恢复！`)) {
+                const ids = filtered.map(r => r.id);
+                await deleteRecordsBatch(ids);
+                showToast(`已删除 ${ids.length} 条记录`);
+                await refreshRecordList();
+            }
+        }
 
         // ========== 月度整合（单学生） ==========
         async function refreshMonthlyStudentSelect() {
@@ -874,7 +996,7 @@
                     const classContentsList = [...new Set(monthRecords.map(r => r.classContent))];
                     const contentSummaryHtml = classContentsList.map(c => `• ${escapeHtml(c)}`).join('<br>');
                     const rawFeedback = monthRecords.map(r => `- ${r.reviewText}`).join('\n');
-                    const temperature = 0.7 + Math.random() * 0.3; // 随机温度
+                    const temperature = 0.7 + Math.random() * 0.3;
                     const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，要求：
 - 语言亲切自然，不要出现“你”字，写成连贯段落。
 - 总结孩子本月表现和进步。
@@ -978,12 +1100,27 @@
             document.getElementById('nameFilterSelectGen').addEventListener('input', refreshStudentSelectors);
             document.getElementById('toggleIndividualBtn').addEventListener('click', () => { const area=document.getElementById('individualPerfArea'); area.style.display = area.style.display==='none' ? 'block' : 'none'; });
             document.getElementById('searchRecordsBtn').addEventListener('click', () => refreshRecordList());
-            document.getElementById('resetRecordsBtn').addEventListener('click', () => { document.getElementById('recordClassFilter').value=''; document.getElementById('recordNameSearch').value=''; refreshRecordList(); });
+            document.getElementById('resetRecordsBtn').addEventListener('click', () => {
+                document.getElementById('recordClassFilter').value='';
+                document.getElementById('recordNameSearch').value='';
+                document.getElementById('recordDateFrom').value='';
+                document.getElementById('recordDateTo').value='';
+                refreshRecordList();
+            });
             document.getElementById('batchDeleteBtn').addEventListener('click', batchDeleteRecords);
             document.getElementById('selectAllRecordsBtn').addEventListener('click', () => { const cb=document.getElementById('recordSelectAllCheckbox'); cb.checked=!cb.checked; selectAllRecords(); });
             document.getElementById('recordSelectAllCheckbox').addEventListener('change', selectAllRecords);
             document.getElementById('recordClassFilter').addEventListener('change', () => refreshRecordList());
             document.getElementById('recordNameSearch').addEventListener('input', () => refreshRecordList());
+            document.getElementById('recordDateFrom').addEventListener('change', () => refreshRecordList());
+            document.getElementById('recordDateTo').addEventListener('change', () => refreshRecordList());
+
+            // 批量编辑事件
+            document.getElementById('batchEditSelectedBtn').addEventListener('click', batchEditSelected);
+            document.getElementById('closeBatchEditBtn').addEventListener('click', () => document.getElementById('batchEditModal').classList.remove('show'));
+            document.getElementById('confirmBatchEditBtn').addEventListener('click', confirmBatchEdit);
+            // 批量删除筛选结果
+            document.getElementById('batchDeleteFilteredBtn').addEventListener('click', batchDeleteFiltered);
 
             const addRecordBtn = document.getElementById('addRecordBtn');
             const modal = document.getElementById('addRecordModal');
@@ -1043,7 +1180,7 @@
             renderAllByTab();
             bindMonthlyBatchEvents();
             renderBatchStudentList();
-            console.log('初始化完成，所有事件已绑定 (课评生成已简化，基于课堂内容+学生表现，强制不雷同)');
+            console.log('初始化完成，所有事件已绑定 (课堂记录支持日期筛选、批量编辑、删除筛选结果)');
         }
 
         checkLoginStatus();

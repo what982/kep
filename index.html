@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -203,14 +203,12 @@
             <div class="card">
                 <div class="card-header">📅 月度课评整合（支持批量选择学生，一键生成）</div>
                 <div class="card-body">
-                    <!-- 筛选栏 -->
                     <div class="filter-bar" style="margin-bottom: 16px;">
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🏫 班级筛选</label><select id="monthlyClassFilter"><option value="">全部班级</option></select></div>
                         <div class="form-group" style="flex:1; margin-bottom:0;"><label>🔍 姓名搜索</label><input type="text" id="monthlyNameSearch" placeholder="输入学生姓名"></div>
                         <button id="refreshMonthlyStudentBtn" class="btn btn-sm">刷新学生列表</button>
                     </div>
 
-                    <!-- 原有的单个学生操作区 -->
                     <div class="grid-2cols" style="gap: 1rem; background:#F9FCFE; border-radius:1rem; padding:0.6rem; margin-bottom:1rem;">
                         <div class="form-group"><label>👩‍🎓 选择学生（单学生操作）</label><select id="studentSelect"><option value="">-- 请先添加学生 --</option></select></div>
                         <div class="form-group"><label>📆 选择月份</label><input type="month" id="monthPicker"></div>
@@ -218,7 +216,6 @@
                         <div class="flex-btns" style="gap:8px;"><button id="viewRecordsBtn" class="btn">📋 查看本月记录</button><button id="generateSummaryBtn" class="btn btn-primary">✨ 生成AI总结</button></div>
                     </div>
 
-                    <!-- 批量选择学生区域 -->
                     <div style="border-top: 2px dashed #FFE0D0; margin: 10px 0 8px; padding-top: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
                             <strong>👥 批量选择学生（基于上方筛选）</strong>
@@ -233,11 +230,9 @@
                         </div>
                     </div>
 
-                    <!-- 单个学生查看的内容汇总及月度总结 -->
                     <div style="margin-top:20px;"><strong>📚 课堂内容汇总</strong><button id="copyContentSummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><div id="classContentSummary" class="result-preview" style="margin-top:6px;">-</div></div>
                     <div style="margin-top:20px;"><strong>🤖 月度总结（可编辑）</strong><button id="copyMonthlySummaryBtn" class="btn btn-sm" style="margin-left:10px;">📋 复制</button><textarea id="monthlySummaryEditable" rows="6" class="result-preview" style="width:100%; margin-top:6px;"></textarea></div>
 
-                    <!-- 批量生成结果展示区域 -->
                     <div style="margin-top: 28px;" id="batchResultArea">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"><strong>📦 批量生成汇总结果</strong><span id="batchProgressMsg" style="font-size:12px; color:#D9583C;"></span></div>
                         <div id="batchResultsContainer" style="max-height: 500px; overflow-y: auto;"></div>
@@ -566,66 +561,13 @@
             document.querySelectorAll('.ind-perf-input').forEach(inp => inp.addEventListener('change', (e) => { const sid = parseInt(inp.dataset.id); individualPerfMap[sid] = inp.value.trim(); }));
         }
 
-        // ========== 课评多样性辅助函数（口语化版本） ==========
-        const DIMENSIONS_POOL = [
-            '上课眼睛跟不跟老师走，有没有走神', 
-            '做题速度是磨蹭还是爽快，准确率高不高',
-            '敢不敢主动举手回答问题，声音大不大',
-            '跟同桌合作时配合得怎么样，会不会抢话',
-            '遇到困难时是愣住还是想办法，抗挫力如何',
-            '课堂笔记或练习本写得整不整洁，有没有涂改',
-            '老师讲新知识时眼神有没有光，理解得快不快',
-            '搭积木/编程时手顺不顺，遇到bug有没有耐心找',
-            '有没有自己跳出常规思路，冒出些不一样的想法',
-            '课堂上小动作多不多，坐不坐得住',
-            '有没有主动帮助旁边同学，或者主动请教别人',
-            '对老师提问的反应是快还是慢，答得靠不靠谱',
-            '作业上交是不是及时，书写有没有进步',
-            '课堂最后几分钟还能不能集中注意力',
-            '对课堂任务的理解对不对，会不会跑偏主题',
-            '小组讨论时是主导者还是倾听者，有没有贡献点子'
-        ];
-
-        const STYLE_POOL = [
-            '像班主任在走廊里跟家长随口聊孩子，语气轻松自然，不端着',
-            '像老师课后在办公室跟同事吐槽或夸奖，真实有细节',
-            '像写给家长的小纸条，温暖实在，不说大道理',
-            '像课堂观察笔记，平实记录，有啥说啥，不拔高',
-            '像朋友间聊天，带点口语词（“其实”“反正”“不过”），亲切',
-            '像老师翻看学生作品时的随口感叹，生动有画面'
-        ];
-
-        const OPENING_POOL = [
-            '这节课吧，', 
-            '今天这堂课，', 
-            '这次课上呢，',
-            '这节课看下来，', 
-            '今天上完课，感觉'
-        ];
-
-        const ENDING_POOL = [
-            '用个简单的表情（比如😊或👍），再说一句实在的鼓励，别喊口号',
-            '给一个很具体的小建议（比如“下次可以……”），加个表情',
-            '用一句生活化的话收尾，比如“继续加油，看好他”之类，配个表情',
-            '说一个期待，比如“希望下节课还能看到这样的状态”，加个表情'
-        ];
-
-        function randomPick(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
-        function selectDimensions() {
-            const shuffled = [...DIMENSIONS_POOL].sort(() => Math.random() - 0.5);
-            const count = Math.random() > 0.6 ? 3 : 2;
-            return shuffled.slice(0, count);
-        }
-
+        // ========== 字数统计辅助 ==========
         function countChineseChars(text) {
             const chinese = text.match(/[\u4e00-\u9fa5]/g);
             return chinese ? chinese.length : 0;
         }
 
-        // ========== 优化后的 generatePreviews（口语化 + 精确字数 + 多样性 + 不虚构 + 同学生不同课不雷同 + 优先使用表现信息） ==========
+        // ========== 简化后的 generatePreviews（基于课堂内容 + 学生表现，强制不雷同） ==========
         async function generatePreviews() {
             const classContent = document.getElementById('classContentInput').value.trim();
             if (!classContent) { showToast('请填写课堂内容', true); return; }
@@ -644,7 +586,7 @@
             genBtn.disabled = true;
             genBtn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
             const container = document.getElementById('generatedPreviews');
-            container.innerHTML = '<div class="info-note">⏳ 正在生成个性化课评（口语化+精确字数）...</div>';
+            container.innerHTML = '<div class="info-note">⏳ 正在生成课评...</div>';
 
             const studentList = [];
             for (const cb of selectedBoxes) {
@@ -657,37 +599,21 @@
             }
             if (studentList.length === 0) { showToast('未找到有效学生', true); genBtn.disabled = false; genBtn.innerHTML = '✨ 生成课评预览（可编辑）'; return; }
 
-            const studentConfigs = studentList.map((student) => {
-                const dims = selectDimensions();
-                return {
-                    student,
-                    dims,
-                    style: randomPick(STYLE_POOL),
-                    opening: randomPick(OPENING_POOL),
-                    ending: randomPick(ENDING_POOL),
-                    seed: Math.random().toString(36).substring(2, 8)
-                };
-            });
-
-            async function fetchReviewWithRetry(config, maxRetries = 2) {
-                const { student, dims, style, opening, ending } = config;
-                const dimStr = dims.join('、');
+            async function fetchReviewForStudent(student, maxRetries = 2) {
                 const perfInfo = student.perf || '无特别说明';
+                // 每个请求使用不同的随机温度（0.7~1.1），增加多样性
+                const temperature = 0.7 + Math.random() * 0.4;
 
                 const prompt = `请为“${student.name}”同学写一段课后评语，要求如下：
 
-1. 开头必须为“${student.name}${opening}”，接着围绕课堂内容“${classContent}”展开。
-2. 【字数要求】必须严格控制在 ${targetWords} 字左右，正负不超过 3 字（即 ${targetWords-3}~${targetWords+3} 字）。你生成后自己数一下中文字数。
-3. 风格：${style}。
-4. 重点从以下方面聊：${dimStr}。
-5. 【非常重要】本次评价必须基于该生表现信息：“${perfInfo}”来写。如果该生表现有具体描述（例如“做题慢但准确率高”“今天主动举手了”），请务必在评价中明确引用或体现这些内容，作为评价的核心依据；如果该生表现是“无特别说明”或空，则根据课堂内容和维度进行合理推断，但不要捏造具体行为细节。
-6. 【关键】由于你只知道课堂内容“${classContent}”和该生表现“${perfInfo}”，并不知道其他具体细节，所以**不要虚构任何该生没有参与的具体环节、题号或话语**。请基于已有信息，从整体印象和课堂参与状态进行评价，描述该生的学习状态、专注程度、互动情况、完成任务的节奏等，所有评价必须紧扣本节课内容，不能跑题。
-7. 【新增】请特别注意：即使你曾经为这位同学写过其他课堂的评语，本次评价也必须**完全针对本节课“${classContent}”的特定内容**来写，避免使用“学习认真”“态度端正”等任何通用表述，要让读者一眼看出这是针对这节课的专属评价，与其他课堂的评价有明显差异。
-8. 禁止使用“表现良好”“积极发言”“认真听讲”这种空话套话，用口语化的真实感受，像老师随口说的话。
-9. 全文不能出现“你”“她”“他”字，直接用名字或“该生”，或者直接说事（比如“上课很专注”）。
-10. 结尾：${ending}。
-11. 确保这段评语跟其他同学的评语在选词、句式和侧重点上都不一样，避免雷同。
-12. 适当加表情符号（比如😊、👍、😂之类），自然就好。
+1. 开头直接以“${student.name}本节课……”开始，围绕课堂内容“${classContent}”展开。
+2. 【字数要求】严格控制在 ${targetWords} 字左右，正负不超过 3 字（即 ${targetWords-3}~${targetWords+3} 字）。你生成后请自行数一下中文字数。
+3. 风格：口语化，像老师随口聊，自然、真实。
+4. 评价必须基于该生表现：“${perfInfo}”。如果表现有具体描述，请明确引用；如果“无特别说明”，则根据课堂内容合理推测整体状态，但不要虚构具体行为细节（如题号、话语等）。
+5. 全文不能出现“你”“她”“他”字，直接用名字或“该生”，或者直接说事。
+6. 结尾加一个合适的表情符号（如😊或👍），并给一句实在的鼓励。
+7. 确保这段评语是针对本节课“${classContent}”的专属评价，避免与其他课堂的评语雷同。
+8. 【重要】如果同时为多名学生生成评语，请确保这份评语的用语、句式和侧重点与给其他同学的评语明显不同，体现出该生的个性化特点，避免内容雷同。
 
 直接输出评语文本，不要加任何额外解释。`;
 
@@ -700,7 +626,7 @@
                                 model: apiConfig.modelId,
                                 messages: [{ role: 'user', content: prompt }],
                                 max_tokens: Math.min(600, targetWords * 2 + 80),
-                                temperature: 0.85 + (Math.random() * 0.15),
+                                temperature: temperature,
                                 top_p: 0.92
                             })
                         });
@@ -709,7 +635,7 @@
                         let review = data.choices?.[0]?.message?.content?.trim() || '生成失败';
                         review = review.replace(/[你她他]/g, student.name);
                         if (!review.startsWith(student.name)) {
-                            review = student.name + '这节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
+                            review = student.name + '本节课' + review.replace(/^[^，。,.]*[，。,.]?\s*/, '');
                         }
                         const charCount = countChineseChars(review);
                         const diff = Math.abs(charCount - targetWords);
@@ -730,7 +656,7 @@
 
             const concurrencyLimit = 3;
             const results = [];
-            const queue = [...studentConfigs];
+            const queue = [...studentList];
             let completed = 0;
             const updateProgress = () => {
                 container.innerHTML = `<div class="info-note">⏳ 生成中... ${completed}/${studentList.length}</div>`;
@@ -738,15 +664,15 @@
 
             async function worker() {
                 while (queue.length) {
-                    const config = queue.shift();
-                    const result = await fetchReviewWithRetry(config);
+                    const student = queue.shift();
+                    const result = await fetchReviewForStudent(student);
                     results.push(result);
                     completed++;
                     updateProgress();
                 }
             }
 
-            const workers = Array(Math.min(concurrencyLimit, studentConfigs.length)).fill().map(() => worker());
+            const workers = Array(Math.min(concurrencyLimit, studentList.length)).fill().map(() => worker());
             await Promise.all(workers);
 
             const orderedResults = studentList.map(st => {
@@ -948,10 +874,16 @@
                     const classContentsList = [...new Set(monthRecords.map(r => r.classContent))];
                     const contentSummaryHtml = classContentsList.map(c => `• ${escapeHtml(c)}`).join('<br>');
                     const rawFeedback = monthRecords.map(r => `- ${r.reviewText}`).join('\n');
-                    const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，语言亲切自然，不要出现“你”字，写成连贯段落，总结孩子本月表现和进步。\n原始课评：\n${rawFeedback}`;
+                    const temperature = 0.7 + Math.random() * 0.3; // 随机温度
+                    const prompt = `请将以下该学生本月课评整合成一段约${targetWords}字的月度总结，要求：
+- 语言亲切自然，不要出现“你”字，写成连贯段落。
+- 总结孩子本月表现和进步。
+- 【重要】如果同时为多名学生生成，请确保每份总结的用语、句式、侧重点不同，避免雷同。
+
+原始课评：\n${rawFeedback}`;
                     const res = await fetch(apiConfig.endpoint, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-                        body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: Math.min(500, targetWords+80) })
+                        body: JSON.stringify({ model: apiConfig.modelId, messages: [{ role: 'user', content: prompt }], temperature: temperature, max_tokens: Math.min(500, targetWords+80) })
                     });
                     if (!res.ok) throw new Error(`API ${res.status}`);
                     const data = await res.json();
@@ -1111,7 +1043,7 @@
             renderAllByTab();
             bindMonthlyBatchEvents();
             renderBatchStudentList();
-            console.log('初始化完成，所有事件已绑定 (课评生成已升级为口语化、精确字数、高多样性、不虚构、同学生不同课不雷同、优先使用表现信息)');
+            console.log('初始化完成，所有事件已绑定 (课评生成已简化，基于课堂内容+学生表现，强制不雷同)');
         }
 
         checkLoginStatus();
